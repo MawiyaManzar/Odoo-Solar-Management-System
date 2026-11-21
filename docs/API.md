@@ -88,7 +88,7 @@ Active packages only. Inactive packages return 404 on the public detail route.
 | :--- | :--- | :--- | :--- |
 | GET | `/api/public/packages` | public | Active packages. Same `PackageResult` shape, items omitted |
 | GET | `/api/public/packages/:id` | public | Active package including `items` |
-| POST | `/api/public/enquiries` | public | `{ name, phone, email?, addressLine, city, pincode?, customerType?, requestedKw, systemKind?, wantsSubsidy?, notes? }` |
+| POST | `/api/public/enquiries` | public | `{ name, phone, email?, addressLine, city, pincode?, customerType?, requestedKw, systemKind?, wantsSubsidy?, monthlyBillInr?, roofAreaSqft?, gridSuitable?, notes? }` |
 
 Creates or updates the customer matched by phone, then inserts an enquiry with `source: web_form` and `status: new`. Response: `{ customer: CustomerResult, enquiry: EnquiryResult }`.
 

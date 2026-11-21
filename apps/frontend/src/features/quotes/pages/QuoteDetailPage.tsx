@@ -52,6 +52,8 @@ export const QuoteDetailPage: React.FC = () => {
     }
   };
 
+  const customerLink = quote ? (quote.customerPath ?? `/my/quotes/${quote.id}`) : "";
+
   return (
     <div>
       <PageHeader
@@ -79,9 +81,20 @@ export const QuoteDetailPage: React.FC = () => {
             />
             <p style={{ margin: 0 }}>Subtotal {quote.subtotalInr.toLocaleString("en-IN")} · Discount {quote.discountInr.toLocaleString("en-IN")} · Total {quote.totalInr.toLocaleString("en-IN")}</p>
             {quote.status !== "draft" && (
-              <p style={{ margin: 0 }}>
-                Customer link: <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{quote.customerPath ?? `/my/quotes/${quote.id}`}</span>
-              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <p style={{ margin: 0 }}>
+                  Customer link:{" "}
+                  <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{customerLink}</span>
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.open(customerLink, "_blank", "noopener,noreferrer")}
+                >
+                  Open customer link
+                </Button>
+              </div>
             )}
             {canWrite && (
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>

@@ -41,32 +41,37 @@ function authHeaders(): Record<string, string> {
 }
 
 async function request<T>(method: string, endpoint: string, body?: unknown, options?: RequestInit): Promise<T> {
+  const hasBody = body !== undefined;
   const response = await fetch(formatUrl(endpoint), {
     ...options,
     method,
     headers: {
-      "Content-Type": "application/json",
+      ...(hasBody ? { "Content-Type": "application/json" } : {}),
       ...authHeaders(),
       ...options?.headers
     },
-    body: body !== undefined ? JSON.stringify(body) : undefined
+    body: hasBody ? JSON.stringify(body) : undefined
   });
 
-  if (!response.ok) {
-    let errorBody: unknown;
+  const raw = await response.text();
+  let parsed: unknown;
+  if (raw) {
     try {
-      errorBody = await response.json();
+      parsed = JSON.parse(raw);
     } catch {
-      errorBody = await response.text();
+      parsed = raw;
     }
-    const serverMessage =
-      typeof errorBody === "object" && errorBody !== null && "message" in errorBody
-        ? String((errorBody as { message: unknown }).message)
-        : `${method} ${endpoint} failed with status ${response.status}`;
-    throw new ApiError(response.status, serverMessage, errorBody);
   }
 
-  return response.json() as Promise<T>;
+  if (!response.ok) {
+    const serverMessage =
+      typeof parsed === "object" && parsed !== null && "message" in parsed
+        ? String((parsed as { message: unknown }).message)
+        : `${method} ${endpoint} failed with status ${response.status}`;
+    throw new ApiError(response.status, serverMessage, parsed);
+  }
+
+  return parsed as T;
 }
 
 export const apiClient = {

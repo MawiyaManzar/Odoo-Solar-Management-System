@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,magenta \"pnpm run dev:backend\" \"pnpm run dev:frontend\"",
+    "dev:fresh": "node scripts/free-dev-ports.mjs && pnpm run dev",
+    "free:ports": "node scripts/free-dev-ports.mjs",
     "dev:backend": "pnpm --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:api": "pnpm run dev:backend",

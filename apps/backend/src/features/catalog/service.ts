@@ -298,6 +298,9 @@ export async function createPublicEnquiry(input: PublicEnquiryInput): Promise<{ 
         requestedKw: input.requestedKw,
         systemKind: input.systemKind ?? null,
         wantsSubsidy: input.wantsSubsidy ?? false,
+        monthlyBillInr: input.monthlyBillInr ?? null,
+        roofAreaSqft: input.roofAreaSqft ?? null,
+        gridSuitable: input.gridSuitable ?? null,
         status: "new",
         notes: input.notes ?? null
       })
