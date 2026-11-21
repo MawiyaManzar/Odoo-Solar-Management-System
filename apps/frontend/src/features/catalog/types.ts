@@ -62,5 +62,8 @@ export interface PublicEnquiryInput {
   requestedKw: number;
   systemKind?: string;
   wantsSubsidy?: boolean;
+  monthlyBillInr?: number | null;
+  roofAreaSqft?: number | null;
+  gridSuitable?: boolean | null;
   notes?: string;
 }

@@ -63,6 +63,9 @@ export const publicEnquiryBodySchema = z.object({
   requestedKw: z.number().positive().max(999.9),
   systemKind: z.enum(ENQUIRY_SYSTEM_KINDS).optional(),
   wantsSubsidy: z.boolean().optional(),
+  monthlyBillInr: z.number().nonnegative().nullable().optional(),
+  roofAreaSqft: z.number().nonnegative().nullable().optional(),
+  gridSuitable: z.boolean().nullable().optional(),
   notes: z.string().trim().optional()
 });
 

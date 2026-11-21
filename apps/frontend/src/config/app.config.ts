@@ -6,7 +6,6 @@ export interface AppRoleOption {
 export interface AppConfig {
   name: string;
   tagline: string;
-  logoText: string;
   version: string;
   defaultRoles: AppRoleOption[];
 }
@@ -14,7 +13,6 @@ export interface AppConfig {
 export const APP_CONFIG: AppConfig = {
   name: "SunPower",
   tagline: "Solar Installation Management",
-  logoText: "S",
   version: "v1.0.0",
   defaultRoles: [
     { value: "admin", label: "Director / Admin" },
