@@ -11,6 +11,7 @@ import { Select } from "../../../components/ui/Select";
 import { SkeletonRows } from "../../../components/ui/Skeleton";
 import { Table } from "../../../components/ui/Table";
 import { formatWhen, labelStatus, orderStatusVariant } from "../../orders/status";
+import { AddSerialDialog } from "../components/AddSerialDialog";
 import { createDispatch, listDispatches, listPaidOrders, listStock } from "../inventory.api";
 import type { DispatchItem, DispatchStatus, StockItem } from "../types";
 
@@ -26,6 +27,7 @@ export const WarehousePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [serialOpen, setSerialOpen] = useState(false);
   const [orderId, setOrderId] = useState("");
   const [notes, setNotes] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -78,9 +80,14 @@ export const WarehousePage: React.FC = () => {
               Refresh
             </Button>
             {canWrite && (
-              <Button size="sm" variant="primary" onClick={() => setOpen(true)}>
-                New dispatch
-              </Button>
+              <>
+                <Button size="sm" variant="outline" onClick={() => setSerialOpen(true)}>
+                  Add serial
+                </Button>
+                <Button size="sm" variant="primary" onClick={() => setOpen(true)}>
+                  New dispatch
+                </Button>
+              </>
             )}
           </>
         }
@@ -150,6 +157,7 @@ export const WarehousePage: React.FC = () => {
           )}
         </>
       )}
+      <AddSerialDialog open={serialOpen} onClose={() => setSerialOpen(false)} onSaved={() => load()} />
       <Dialog open={open} title="New dispatch" onClose={() => setOpen(false)}>
         <div style={{ display: "grid", gap: "12px" }}>
           <Select

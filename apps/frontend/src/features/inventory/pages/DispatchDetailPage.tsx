@@ -9,6 +9,7 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { SkeletonRows } from "../../../components/ui/Skeleton";
 import { Table } from "../../../components/ui/Table";
 import { formatWhen, labelStatus, orderStatusVariant } from "../../orders/status";
+import { AddSerialDialog } from "../components/AddSerialDialog";
 import { deliverDispatch, findSerial, getDispatch, listDispatchSerials, markInTransit, scanOut } from "../inventory.api";
 import type { DispatchItem, SerialItem } from "../types";
 
@@ -24,6 +25,7 @@ export const DispatchDetailPage: React.FC = () => {
   const [notFound, setNotFound] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [serialOpen, setSerialOpen] = useState(false);
 
   const load = () => {
     setIsLoading(true);
@@ -127,6 +129,13 @@ export const DispatchDetailPage: React.FC = () => {
             </Alert>
           )}
           {canWrite && !closed && (
+            <div>
+              <Button type="button" size="sm" variant="outline" onClick={() => setSerialOpen(true)}>
+                Add serial
+              </Button>
+            </div>
+          )}
+          {canWrite && !closed && (
             <form
               style={{ display: "flex", gap: "8px", alignItems: "flex-end", maxWidth: "520px" }}
               onSubmit={(event) => {
@@ -169,6 +178,7 @@ export const DispatchDetailPage: React.FC = () => {
           )}
         </div>
       )}
+      <AddSerialDialog open={serialOpen} onClose={() => setSerialOpen(false)} onSaved={load} />
     </div>
   );
 };

@@ -26,6 +26,10 @@ export function deliverDispatch(id: string) {
   return apiClient.post<ApiList<DispatchItem>>(`/dispatches/${id}/deliver`);
 }
 
+export function createSerial(body: { productId: string; serialNumber: string }) {
+  return apiClient.post<ApiList<SerialItem>>("/serial-units", body);
+}
+
 export function findSerial(serialNumber: string) {
   return apiClient.get<ApiList<SerialItem[]>>(`/serial-units?serialNumber=${encodeURIComponent(serialNumber)}`);
 }
