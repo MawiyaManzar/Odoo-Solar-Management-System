@@ -1,6 +1,6 @@
 ---
 name: build-feature
-description: Builds one product feature end to end in this monorepo: requirement and design analysis, Fastify backend (schema.ts, service.ts, routes.ts), React UI following DESIGN.md, backend and Playwright tests, then a walkthrough doc with an Indian-business live example. Use when a teammate starts a new feature from the problem statement and the DB schema and API endpoints are already planned.
+description: Builds one product feature end to end in this monorepo: requirement and design analysis, Fastify backend (schema.ts, service.ts, routes.ts), React UI following DESIGN.md, backend tests plus Cursor browser verification, then a walkthrough doc with an Indian-business live example. Use when a teammate starts a new feature from the problem statement and the DB schema and API endpoints are already planned.
 disable-model-invocation: true
 ---
 
@@ -18,7 +18,7 @@ Copy this checklist and tick it as you go:
 - [ ] 2 Design analysis, screen spec, assumptions reviewed by the developer
 - [ ] 3 Backend: schema.ts -> service.ts -> routes.ts -> registered in app.ts
 - [ ] 4 Frontend: types, api, hooks, components, page, registry entry
-- [ ] 5 Testing: backend integration + acceptance, Playwright behaviour, states, real-mode refresh
+- [ ] 5 Testing: backend integration + acceptance, Cursor browser states check, real-mode refresh
 - [ ] 6 Live example + explanation doc, then hand-off report
 ```
 
@@ -53,7 +53,7 @@ Follow [FRONTEND.md](FRONTEND.md). It covers the UI, the required loading/empty/
 
 ## 5. Testing
 
-Follow [TESTING.md](TESTING.md). Every layer must pass before step 6: backend integration, acceptance per user story, Playwright behaviour tests, states check, and `pnpm dev:real` refresh persistence.
+Follow [TESTING.md](TESTING.md). Every layer must pass before step 6: backend integration, acceptance per user story, Cursor browser UI/states check, and `pnpm dev:real` refresh persistence.
 
 ## 6. Live example, explanation doc, hand-off
 

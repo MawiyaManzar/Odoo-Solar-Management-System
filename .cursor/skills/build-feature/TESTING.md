@@ -2,6 +2,8 @@
 
 Run in this order. Fix failures before moving to the next layer.
 
+Do **not** add Playwright, Cypress, or other browser E2E frameworks. Frontend verification is Cursor browser + manual real-mode checks only.
+
 ## 1. Backend integration and acceptance
 
 Do not edit the shared `apps/backend/test-backend-e2e.mjs` (hot file, merge conflicts). Create `apps/backend/tests/<feature>.e2e.mjs` by copying that file's header (imports, `assert` helper, `migrate()`, `runDatabaseSeed()`, `buildApp`, `app.inject`, results footer). Run:
@@ -25,47 +27,31 @@ Cover, with real Postgres and `app.inject` (no mocks):
 
 Test data created by the tests uses unique suffixes (`Date.now().toString(36)`) so reruns do not collide.
 
-## 2. Frontend behaviour tests (Playwright)
+## 2. Frontend verification (Cursor browser)
 
-Setup, only if `apps/frontend/playwright.config.ts` is not already on `origin/main`:
+Use the Cursor browser tools against a running app (`pnpm dev` or `pnpm dev:real`). Log in with demo accounts from `docs/SETUP.md`. Drive the UI the way a user would (role/label selectors). Do not write Playwright specs or install `@playwright/test`.
 
-```bash
-pnpm --filter frontend add -D @playwright/test
-pnpm --filter frontend exec playwright install chromium
-```
-
-Config: `testDir: "./e2e"`, `use.baseURL: "http://localhost:5173"`, and a `webServer` running `pnpm dev` from the repo root with `reuseExistingServer: true`. The package.json and lockfile changes are shared: tell the developer to commit and merge them first.
-
-Write `apps/frontend/e2e/<feature>.spec.ts`. Log in through the real login page using the demo accounts from `docs/SETUP.md`, via a small `e2e/helpers/auth.ts` helper (create if missing). Tests run against the real backend.
-
-One test per user story, named with the story ID, driving the UI the way a user would (role/label selectors):
+Per user story in Part A:
 
 - Happy path for each role allowed to do it.
-- Negative path: restricted role cannot see or use the action, and a direct API call returns 403.
+- Negative path: restricted role cannot see or use the action.
 - Validation: submitting an invalid form shows the server or client message and does not create a row.
-- Persistence: perform the write, `page.reload()`, and assert the data is still there.
+- Persistence: perform the write, reload, and assert the data is still there.
 
 ### States (required)
 
-| State | How to test |
+| State | How to check |
 | :--- | :--- |
-| Loading | Delay the list request with `page.route("**/api/<feature>*", ...)` then continue; assert `[data-testid="<feature>-skeleton"]` is visible, then gone when data arrives. |
-| Empty | Prefer a real filter or search that matches nothing. If none exists, fulfil the request with an empty `data: []` inside the test via `page.route` (test-only interception, never app code), and assert `[data-testid="<feature>-empty"]` plus the create action for allowed roles. |
-| Error | Fulfil with status 500; assert the danger alert shows the message and Retry refetches. |
+| Loading | Trigger a list/detail load; assert `[data-testid="<feature>-skeleton"]` (or the screen's loading UI) appears briefly, then content. |
+| Empty | Prefer a real filter or search that matches nothing; assert `[data-testid="<feature>-empty"]` plus the create action for allowed roles. |
+| Error | Trigger a failing request if feasible (e.g. stop backend briefly, or use a bad id); assert the danger alert and Retry. |
 | Forbidden | Log in as the restricted role; assert the message or hidden action. |
 
-Run:
-
-```bash
-pnpm dev                       # real mode, in another terminal
-pnpm --filter frontend exec playwright test e2e/<feature>.spec.ts
-```
-
-When a quick visual check is more useful than a spec (layout, spacing, tokens), use the Cursor browser tool: navigate, snapshot, screenshot each state, compare to DESIGN.md.
+For layout, spacing, and tokens, take snapshots/screenshots and compare to `DESIGN.md`.
 
 ## 3. Real-mode verification (required by AGENTS.md)
 
-1. `pnpm dev:real`. Do the full user flow by hand or through Playwright.
+1. `pnpm dev:real`. Do the full user flow by hand or via Cursor browser.
 2. Refresh the browser. Records you created must still be there.
 3. Confirm in the DB: `pnpm db:studio` or `docker compose exec postgres psql -U hackcore -d hackcore`.
 4. Run `pnpm check:mock-leakage` and both `tsc --noEmit` checks.
@@ -73,4 +59,4 @@ When a quick visual check is more useful than a spec (layout, spacing, tokens), 
 
 ## Report
 
-Print a table: layer, command, pass/fail counts. Anything not run is listed as not run with the reason. Never report a layer as passing without running it.
+Print a table: layer, command (or "Cursor browser"), pass/fail counts. Anything not run is listed as not run with the reason. Never report a layer as passing without running it.
