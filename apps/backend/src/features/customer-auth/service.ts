@@ -10,6 +10,7 @@ import { orders, payments } from "../../db/schema/orders.js";
 import { quotes } from "../../db/schema/quotes.js";
 import { newId } from "../../lib/ids.js";
 import { ServiceError } from "../../lib/service-error.js";
+import { recordPayment } from "../orders/service.js";
 import { acceptQuote, getQuote, rejectQuote, type QuoteView } from "../quotes/service.js";
 
 const OTP_MINUTES = 10;
@@ -220,6 +221,16 @@ export async function getOwnedQuote(quoteId: string, customerId: string): Promis
   if (quote.customerId !== customerId) throw new ServiceError(403, "This quote is not yours.");
   if (!VIEWABLE.has(quote.status)) throw new ServiceError(400, "This quote is not ready to view.");
   return quote;
+}
+
+export async function recordCustomerPayment(
+  customerId: string,
+  orderId: string,
+  input: { amountInr: number; kind: "advance" | "balance" | "full"; reference: string }
+) {
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order || order.customerId !== customerId) throw new ServiceError(404, "Order not found.");
+  return recordPayment(orderId, { ...input, method: "upi" }, null);
 }
 
 export async function customerDecide(quoteId: string, customerId: string, decision: "accept" | "reject"): Promise<QuoteView> {

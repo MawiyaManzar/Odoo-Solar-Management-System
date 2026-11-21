@@ -166,7 +166,7 @@ Pattern: click a table row to open detail. Detail has a back link (teal) to the 
   3. **Links** — dispatch, installation, tickets (teal, only if those rows exist)
 - **Actions:** Record payment (sales). Fields: amount, kind, method (UPI / NEFT / cash / cheque), reference.
 - **Rules:**
-  - When paid sum reaches order total, status becomes Paid and a success line reads “Warehouse can pack this job.”
+  - When paid sum reaches 30% of the order total, status becomes Paid and a success line reads “Warehouse can pack this job.”
   - Cancel is an outline danger action for sales/admin, blocked once status is Dispatched or later.
 - **API:** `PATCH /api/orders/:id`, `GET/POST /api/orders/:id/payments`
 

@@ -8,6 +8,7 @@ Changes to roles, table names, status enums, ID prefixes, or endpoint paths need
 | [API.md](API.md) | HTTP methods, paths, roles, request/response bodies |
 | `apps/backend/src/contracts/results.ts` | Zod result shapes (TypeScript source of truth) |
 | `apps/backend/src/contracts/id-prefixes.ts` | ID prefixes |
+| `GET /docs` (Scalar) · `GET /openapi.json` | Live list of **implemented** routes while the backend is running |
 
 ---
 
@@ -32,8 +33,8 @@ Auth envelope user (login/me/signup) still returns `userId`, `fullName`, `email`
 | schema + auth + contracts | Lead | `main` | `users` (+ foundation) |
 | catalog + public landing/inquiry | Dev A | `feat/catalog-landing` | `products`, `packages`, `package_items` (public enquiry also writes `customers`, `enquiries`) |
 | enquiries + surveys + quotes | Dev B | `feat/enquiries-quotes` | `customers`, `enquiries`, `site_surveys`, `quotes`, `quote_lines` |
-| orders + payments | TBD | `feat/orders` | `orders`, `payments` |
-| inventory + dispatch | TBD | `feat/inventory` | `stock_levels`, `serial_units`, `dispatches` |
+| orders + payments | orders-dispatch | `feat/orders-dispatch` | `orders`, `payments` |
+| inventory + dispatch | orders-dispatch | `feat/orders-dispatch` | `stock_levels`, `serial_units`, `dispatches` |
 | installations | TBD | `feat/installations` | `installations` |
 | service tickets | TBD | `feat/tickets` | `service_tickets` |
 | Phase 2 (warranties, evidence, …) | TBD | after Phase 1 | see db-schema Phase 2 |
@@ -113,7 +114,7 @@ Phase 2 endpoint stubs are listed at the bottom of [API.md](API.md) — implemen
 ## Cross-feature dependencies
 
 1. **Quotes** require survey `result = approved` (or admin override) and read `packages` / `package_items` / `products`.
-2. **Orders** created only from `quotes.status = accepted`; payments gate packing.
+2. **Orders** created only from `quotes.status = accepted`; payments gate packing once the recorded sum is at least 30% of `total_inr` (order status `paid`).
 3. **Dispatches** assign `serial_units` to `order_id`; deliver sets `delivered_at` (warranty clock).
 4. **Installations** move order → `completed` and serials → `installed`.
 5. **Service tickets** resolve customer → order → serial; Phase 1 warranty from `products.default_warranty_months` + `serial_units.delivered_at`.
