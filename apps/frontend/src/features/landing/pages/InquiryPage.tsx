@@ -7,6 +7,24 @@ import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { submitPublicEnquiry } from "../../catalog/catalog.api";
 
+/** Matches DB `requested_kw numeric(4, 1)` — max 999.9 */
+const MIN_REQUESTED_KW = 0.5;
+const MAX_REQUESTED_KW = 999.9;
+
+function validateRequestedKw(raw: string): string | null {
+  const value = Number(raw);
+  if (!raw.trim() || Number.isNaN(value)) {
+    return "Enter a system size in kW.";
+  }
+  if (value < MIN_REQUESTED_KW) {
+    return `Requested kW must be at least ${MIN_REQUESTED_KW}.`;
+  }
+  if (value > MAX_REQUESTED_KW) {
+    return `Requested kW must be at most ${MAX_REQUESTED_KW}.`;
+  }
+  return null;
+}
+
 export const InquiryPage: React.FC = () => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -19,12 +37,20 @@ export const InquiryPage: React.FC = () => {
   const [systemKind, setSystemKind] = useState("on_grid");
   const [wantsSubsidy, setWantsSubsidy] = useState(false);
   const [notes, setNotes] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ requestedKw?: string }>({});
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const requestedKwError = validateRequestedKw(requestedKw);
+    if (requestedKwError) {
+      setFieldErrors({ requestedKw: requestedKwError });
+      setError(null);
+      return;
+    }
+    setFieldErrors({});
     setIsLoading(true);
     setError(null);
     try {
@@ -102,7 +128,23 @@ export const InquiryPage: React.FC = () => {
                 { value: "commercial", label: "Commercial" }
               ]}
             />
-            <Input label="Requested kW" required type="number" min="0.5" step="0.1" value={requestedKw} onChange={(event) => setRequestedKw(event.target.value)} />
+            <Input
+              label="Requested kW"
+              required
+              type="number"
+              min={MIN_REQUESTED_KW}
+              max={MAX_REQUESTED_KW}
+              step="0.1"
+              value={requestedKw}
+              error={fieldErrors.requestedKw}
+              helperText={`Between ${MIN_REQUESTED_KW} and ${MAX_REQUESTED_KW} kW`}
+              onChange={(event) => {
+                setRequestedKw(event.target.value);
+                if (fieldErrors.requestedKw) {
+                  setFieldErrors((prev) => ({ ...prev, requestedKw: undefined }));
+                }
+              }}
+            />
             <Select
               label="System"
               value={systemKind}

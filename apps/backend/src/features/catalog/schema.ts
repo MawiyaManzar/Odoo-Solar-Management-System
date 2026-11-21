@@ -59,7 +59,8 @@ export const publicEnquiryBodySchema = z.object({
   city: z.string().trim().min(1),
   pincode: z.string().trim().optional(),
   customerType: z.enum(CUSTOMER_TYPES).optional(),
-  requestedKw: z.number().positive(),
+  /** Matches `enquiries.requested_kw numeric(4, 1)` */
+  requestedKw: z.number().positive().max(999.9),
   systemKind: z.enum(ENQUIRY_SYSTEM_KINDS).optional(),
   wantsSubsidy: z.boolean().optional(),
   notes: z.string().trim().optional()

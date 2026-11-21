@@ -14,7 +14,8 @@ export const enquiryListQuerySchema = z.object({
 });
 
 export const enquiryPatchSchema = z.object({
-  requestedKw: z.number().positive().optional(),
+  /** Matches `enquiries.requested_kw numeric(4, 1)` */
+  requestedKw: z.number().positive().max(999.9).optional(),
   systemKind: z.enum(ENQUIRY_SYSTEM_KINDS).nullable().optional(),
   wantsSubsidy: z.boolean().optional(),
   monthlyBillInr: z.number().nonnegative().nullable().optional(),
