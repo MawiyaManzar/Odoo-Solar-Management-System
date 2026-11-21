@@ -1,6 +1,7 @@
 export * from "./records.js";
 export * from "./users.js";
 export * from "./customers.js";
+export * from "./customer-portal.js";
 export * from "./catalog.js";
 export * from "./enquiries.js";
 export * from "./quotes.js";

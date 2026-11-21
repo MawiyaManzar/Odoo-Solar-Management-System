@@ -8,6 +8,13 @@
       "when": 1795239989347,
       "tag": "0000_melted_christian_walker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795248000000,
+      "tag": "0001_customer_otp",
+      "breakpoints": true
     }
   ]
 }

@@ -192,11 +192,27 @@ Creates or updates the customer matched by phone, then inserts an enquiry with `
 | POST | `/api/quotes` | sales, admin | `{ enquiryId, packageId, discountInr?, validUntil? }` · copies BOM from package into `quote_lines`; enquiry → `quoted` |
 | GET | `/api/quotes/:id` | any auth | include `lines` |
 | PATCH | `/api/quotes/:id` | sales, admin | draft-only line edits: `{ discountInr?, lines?: [...] }` |
-| POST | `/api/quotes/:id/send` | sales, admin | draft → `sent` |
+| POST | `/api/quotes/:id/send` | sales, admin | draft → `sent`. Response adds `customerPath` (`/my/quotes/:id`) |
 | POST | `/api/quotes/:id/accept` | sales, admin | `sent` → `accepted`; **creates** `orders` row (`awaiting_payment`); enquiry → `won` |
 | POST | `/api/quotes/:id/reject` | sales, admin | `draft` or `sent` → `rejected`; enquiry → `lost` |
 
-**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`). Accept and reject are staff actions after the customer answers on a call or WhatsApp. There is no customer login.
+**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`). Staff may still Accept or Reject. The customer may also decide after a phone OTP (below).
+
+---
+
+## Customer OTP — quote decision
+
+Homeowners are not staff users. A `customer_accounts` row is created on the first successful code and points at `customers.id`. Tokens use `actor: "customer"` and are rejected by staff `requireAuth`.
+
+| Method | Path | Who | Body / notes |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/customer-auth/otp` | public | `{ phone, quoteId }` · phone must match the quote’s customer · quote must be `sent`, `accepted`, or `rejected` · 6-digit code, 10 minutes, 5 attempts |
+| POST | `/api/customer-auth/verify` | public | `{ phone, quoteId, code }` → `{ token, customerId }` |
+| GET | `/api/customer/quotes/:id` | that customer | lines and totals |
+| POST | `/api/customer/quotes/:id/accept` | that customer | `sent` only · same order + `won` effect as staff accept |
+| POST | `/api/customer/quotes/:id/reject` | that customer | `sent` only · enquiry → `lost` |
+
+When `NODE_ENV` is not `production`, the OTP response includes `devCode` and the server logs the code. Production omits `devCode`. Wrong phone: `400` “Use the mobile number from your inquiry.”
 
 ---
 

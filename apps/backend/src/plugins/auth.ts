@@ -17,12 +17,22 @@ export async function registerAuth(app: FastifyInstance): Promise<void> {
   await app.register(jwt, { secret });
 }
 
+function rejectCustomer(request: FastifyRequest, reply: FastifyReply): boolean {
+  if (request.user.actor === "customer") {
+    reply.status(403).send({ success: false, message: "You do not have access to this action." });
+    return true;
+  }
+  return false;
+}
+
 export async function requireAuth(request: FastifyRequest, reply: FastifyReply): Promise<void> {
   try {
     await request.jwtVerify();
   } catch {
     reply.status(401).send({ success: false, message: "Authentication required." });
+    return;
   }
+  rejectCustomer(request, reply);
 }
 
 export function requireRole(...roles: Role[]) {
@@ -34,8 +44,21 @@ export function requireRole(...roles: Role[]) {
       return;
     }
 
-    if (!roles.includes(request.user.role as Role)) {
+    if (rejectCustomer(request, reply)) return;
+    if (!request.user.role || !roles.includes(request.user.role as Role)) {
       reply.status(403).send({ success: false, message: "You do not have access to this action." });
     }
   };
+}
+
+export async function requireCustomer(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+  try {
+    await request.jwtVerify();
+  } catch {
+    reply.status(401).send({ success: false, message: "Authentication required." });
+    return;
+  }
+  if (request.user.actor !== "customer" || !request.user.customerId) {
+    reply.status(403).send({ success: false, message: "You do not have access to this action." });
+  }
 }

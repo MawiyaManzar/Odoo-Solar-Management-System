@@ -667,14 +667,15 @@ Circular tip: create `serial_units` without `dispatch_id` FK first, add `dispatc
 
 ---
 
+## Customer quote login
+
+`customer_accounts` and `customer_otps` let the homeowner prove the inquiry phone and accept or reject a sent quote. This is not a staff role. Payment, dispatch, and warranty do not require that login.
+
 ## Out of scope for v1 schema
 
-- Multi-warehouse / multi-company tenancy  
-- Full accounting ledger / GST e-invoice compliance  
-- Real-time IoT generation telemetry  
-- Customer self-serve login portal tables (can reuse `customers` + a portal user later)
-
-These can wait; they are not required to demonstrate the PDF week narrative.
+- Multi-warehouse / multi-company tenancy
+- Full accounting ledger / GST e-invoice compliance
+- Real-time IoT generation telemetry
 
 ---
 

@@ -23,5 +23,6 @@ export interface QuoteItem {
   updatedAt: string;
   customerName: string;
   packageCode: string | null;
+  customerPath?: string;
   lines?: QuoteLineItem[];
 }

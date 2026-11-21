@@ -78,6 +78,11 @@ export const QuoteDetailPage: React.FC = () => {
               ]}
             />
             <p style={{ margin: 0 }}>Subtotal {quote.subtotalInr.toLocaleString("en-IN")} · Discount {quote.discountInr.toLocaleString("en-IN")} · Total {quote.totalInr.toLocaleString("en-IN")}</p>
+            {quote.status !== "draft" && (
+              <p style={{ margin: 0 }}>
+                Customer link: <span style={{ fontFamily: "var(--font-mono, monospace)" }}>{quote.customerPath ?? `/my/quotes/${quote.id}`}</span>
+              </p>
+            )}
             {canWrite && (
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <Button type="button" variant="secondary" disabled={quote.status !== "draft" || saving} onClick={() => void run(() => sendQuote(quote.id), "Quote sent.")}>Send</Button>
@@ -86,7 +91,7 @@ export const QuoteDetailPage: React.FC = () => {
               </div>
             )}
             <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
-              Accept or reject after the customer answers on a call or WhatsApp. Accept creates an order awaiting payment.
+              The customer accepts or rejects on their link after a phone code. Sales can still record the answer here. Accept creates an order awaiting payment.
             </p>
           </>
         )}

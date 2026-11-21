@@ -37,7 +37,7 @@ export async function quoteRoutes(app: FastifyInstance): Promise<void> {
     const body = parseOrReply(quoteCreateSchema, request.body, reply);
     if (!body) return;
     try {
-      const quote = await createQuote(body, { id: request.user.sub, role: request.user.role });
+      const quote = await createQuote(body, { id: request.user.sub, role: request.user.role ?? "" });
       return reply.status(201).send({ success: true, data: quote, message: "Quote created." });
     } catch (error) {
       if (sendKnownError(error, reply)) return;
@@ -62,7 +62,12 @@ export async function quoteRoutes(app: FastifyInstance): Promise<void> {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
     try {
-      return { success: true, data: await sendQuote(params.id), message: "Quote sent." };
+      const quote = await sendQuote(params.id);
+      return {
+        success: true,
+        data: { ...quote, customerPath: `/my/quotes/${quote.id}` },
+        message: "Quote sent."
+      };
     } catch (error) {
       if (sendKnownError(error, reply)) return;
       throw error;

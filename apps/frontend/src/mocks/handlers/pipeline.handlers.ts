@@ -29,6 +29,7 @@ const enquiries: EnquiryItem[] = [
 
 const surveys: SurveyItem[] = [];
 const quotes: QuoteItem[] = [];
+const otpByPhone = new Map<string, string>();
 
 function unauthorized() {
   return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
@@ -198,7 +199,11 @@ export const pipelineHandlers = [
     const quote = quotes.find((item) => item.id === params.id);
     if (!quote) return HttpResponse.json({ success: false, message: "Quote not found." }, { status: 404 });
     quote.status = "sent";
-    return HttpResponse.json({ success: true, data: quote, message: "Quote sent." });
+    return HttpResponse.json({
+      success: true,
+      data: { ...quote, customerPath: `/my/quotes/${quote.id}` },
+      message: "Quote sent."
+    });
   }),
 
   http.post("/api/quotes/:id/accept", ({ request, params }) => {
@@ -210,6 +215,68 @@ export const pipelineHandlers = [
     const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
     if (enquiry) enquiry.status = "won";
     return HttpResponse.json({ success: true, data: quote, message: "Quote accepted." });
+  }),
+
+  http.post("/api/customer-auth/otp", async ({ request }) => {
+    const body = (await request.json()) as { phone: string; quoteId: string };
+    const quote = quotes.find((item) => item.id === body.quoteId);
+    const enquiry = enquiries.find((item) => item.id === quote?.enquiryId);
+    if (!quote || !enquiry || enquiry.customerPhone !== body.phone) {
+      return HttpResponse.json({ success: false, message: "Use the mobile number from your inquiry." }, { status: 400 });
+    }
+    if (!["sent", "accepted", "rejected"].includes(quote.status)) {
+      return HttpResponse.json({ success: false, message: "This quote is not ready to view." }, { status: 400 });
+    }
+    otpByPhone.set(body.phone, "123456");
+    return HttpResponse.json({ success: true, devCode: "123456", message: "Code sent." });
+  }),
+
+  http.post("/api/customer-auth/verify", async ({ request }) => {
+    const body = (await request.json()) as { phone: string; quoteId: string; code: string };
+    if (otpByPhone.get(body.phone) !== body.code) {
+      return HttpResponse.json({ success: false, message: "That code is not correct." }, { status: 400 });
+    }
+    const quote = quotes.find((item) => item.id === body.quoteId);
+    return HttpResponse.json({
+      success: true,
+      data: { token: `customer.${quote?.customerId ?? "cus"}`, customerId: quote?.customerId ?? "" }
+    });
+  }),
+
+  http.get("/api/customer/quotes/:id", ({ request, params }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    const quote = quotes.find((item) => item.id === params.id);
+    if (!quote || !token.endsWith(quote.customerId)) {
+      return HttpResponse.json({ success: false, message: "This quote is not yours." }, { status: 403 });
+    }
+    return HttpResponse.json({ success: true, data: quote });
+  }),
+
+  http.post("/api/customer/quotes/:id/accept", ({ request, params }) => {
+    const token = request.headers.get("authorization") ?? "";
+    const quote = quotes.find((item) => item.id === params.id);
+    if (!quote || !token.endsWith(quote.customerId)) {
+      return HttpResponse.json({ success: false, message: "This quote is not yours." }, { status: 403 });
+    }
+    if (quote.status !== "sent") return HttpResponse.json({ success: false, message: "This quote is already decided." }, { status: 400 });
+    quote.status = "accepted";
+    const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
+    if (enquiry) enquiry.status = "won";
+    return HttpResponse.json({ success: true, data: quote, message: "Quote accepted." });
+  }),
+
+  http.post("/api/customer/quotes/:id/reject", ({ request, params }) => {
+    const token = request.headers.get("authorization") ?? "";
+    const quote = quotes.find((item) => item.id === params.id);
+    if (!quote || !token.endsWith(quote.customerId)) {
+      return HttpResponse.json({ success: false, message: "This quote is not yours." }, { status: 403 });
+    }
+    if (quote.status !== "sent") return HttpResponse.json({ success: false, message: "This quote is already decided." }, { status: 400 });
+    quote.status = "rejected";
+    const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
+    if (enquiry) enquiry.status = "lost";
+    return HttpResponse.json({ success: true, data: quote, message: "Quote rejected." });
   }),
 
   http.post("/api/quotes/:id/reject", ({ request, params }) => {

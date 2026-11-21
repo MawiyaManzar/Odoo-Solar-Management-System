@@ -2,6 +2,8 @@
 export const ID_PREFIXES = {
   user: "usr-",
   customer: "cus-",
+  customerAccount: "cac-",
+  customerOtp: "otp-",
   enquiry: "enq-",
   siteSurvey: "sur-",
   product: "prd-",
