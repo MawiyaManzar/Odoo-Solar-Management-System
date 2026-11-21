@@ -15,7 +15,9 @@ export const AppShell: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const apiMode = import.meta.env.VITE_API_MODE ?? "real";
-  const visibleFeatures = featureRoutes.filter((feature) => user && feature.roles.includes(user.role));
+  const visibleFeatures = featureRoutes.filter(
+    (feature) => user && feature.showInNav !== false && feature.roles.includes(user.role)
+  );
 
   if (!user) return null;
 

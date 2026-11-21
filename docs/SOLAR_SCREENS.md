@@ -5,7 +5,11 @@ Format follows `docs/HACKATHON_SCREENS.md`: one list and one detail per module, 
 
 Look: existing `apps/frontend/DESIGN.md` (flat Odoo-style back office). Beige page, off-white tables, plum primary buttons, teal links and focus, 1px hairlines, no gradients, no shadows, no emoji. Status pills only from the design tokens (success / warning / danger / info / neutral). Lists run edge to edge. Forms and auth are width-limited. Technician screens are the same components stacked for a phone.
 
-**Phase 1: 16 screens.** Phase 2 adds 4 more after the happy path works. Sample names and amounts below are wireframe placeholders from the seed story. Do not hardcode them in components.
+**Phase 1 build slice (now):** public landing and inquiry, staff sign-in, enquiries, site surveys, quotes (send / accept / reject), and catalog. That is the landing → quote cycle. Screens 7–14 and 17 (orders, warehouse, installations, tickets, reports) stay specified below but are **deferred** until this cycle works in `pnpm dev:real`.
+
+**Phase 1 full map: 16 staff screens** plus two public screens (P1 landing, P2 inquiry). Phase 2 adds 4 more after the happy path works. Sample names and amounts below are wireframe placeholders from the seed story. Do not hardcode them in components.
+
+Public routes have no tab bar. `/` is the landing page. Staff sign-in stays at `/login`. Customers do not get an account; sales records accept or reject after the customer answers offline.
 
 ---
 
@@ -350,18 +354,16 @@ Stock movements, warranty policies, and technician hour rows stay admin subsecti
 
 ---
 
-## Cut line for a short hackathon
+## Cut line for this build
 
-If time is short, ship in this order. Each pair is list + detail.
+Ship this slice first. Screens 7–14 and 17 are deferred.
 
-1. Login, Dashboard (static counts are not allowed — real counts or an explicit empty state)
-2. Enquiries + survey gate
-3. Quotes from package `OG-3KW` + accept → order
-4. Order payments
-5. Dispatch serial scan + deliver
-6. Installation complete
-7. Ticket lookup by phone/serial
-8. Reports margin table
-9. Catalog edit (admin can demo with seed data if edit slips)
+1. P1 Landing (browse active packages) and P2 Inquiry form (`source: web_form`)
+2. Login, Dashboard (real counts or an explicit empty state)
+3. Enquiries + survey gate (sales schedules, technician records result)
+4. Quotes from a package + send, then sales Accept or Reject
+5. Catalog edit (admin)
 
-That path is the PDF week: form → survey → quote → pay → serials → roof → breakdown → director.
+Later, in order: order payments, dispatch serial scan, installation complete, ticket lookup, reports.
+
+That first slice is the PDF opening: form → survey → quote → customer says yes or no (recorded by sales).

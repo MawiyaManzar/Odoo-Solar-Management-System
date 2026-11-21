@@ -30,9 +30,8 @@ Auth envelope user (login/me/signup) still returns `userId`, `fullName`, `email`
 | Feature | Owner | Branch | Tables it owns |
 | :--- | :--- | :--- | :--- |
 | schema + auth + contracts | Lead | `main` | `users` (+ foundation) |
-| customers + enquiries + surveys | TBD | `feat/enquiries` | `customers`, `enquiries`, `site_surveys` |
-| catalog (products/packages) | TBD | `feat/catalog` | `products`, `packages`, `package_items` |
-| quotes | TBD | `feat/quotes` | `quotes`, `quote_lines` |
+| catalog + public landing/inquiry | Dev A | `feat/catalog-landing` | `products`, `packages`, `package_items` (public enquiry also writes `customers`, `enquiries`) |
+| enquiries + surveys + quotes | Dev B | `feat/enquiries-quotes` | `customers`, `enquiries`, `site_surveys`, `quotes`, `quote_lines` |
 | orders + payments | TBD | `feat/orders` | `orders`, `payments` |
 | inventory + dispatch | TBD | `feat/inventory` | `stock_levels`, `serial_units`, `dispatches` |
 | installations | TBD | `feat/installations` | `installations` |
@@ -62,11 +61,14 @@ Full request/response detail: [API.md](API.md).
 | POST | `/api/auth/signup` | public | auth |
 | POST | `/api/auth/login` | public | auth |
 | GET | `/api/auth/me` | any auth | auth |
+| GET | `/api/public/packages` | public | catalog |
+| GET | `/api/public/packages/:id` | public | catalog |
+| POST | `/api/public/enquiries` | public | catalog |
 | GET/POST | `/api/customers` | read: any · write: sales, admin | enquiries |
 | GET/PATCH | `/api/customers/:id` | read: any · write: sales, admin | enquiries |
 | GET/POST | `/api/enquiries` | read: any · write: sales, admin | enquiries |
 | GET/PATCH | `/api/enquiries/:id` | read: any · write: sales, admin | enquiries |
-| GET/POST | `/api/enquiries/:id/surveys` | read: any · write: technician, admin | enquiries |
+| GET/POST | `/api/enquiries/:id/surveys` | read: any · write schedule: sales, technician, admin | enquiries |
 | PATCH | `/api/surveys/:id` | technician, admin | enquiries |
 | GET/POST | `/api/products` | read: any · write: admin | catalog |
 | PATCH | `/api/products/:id` | admin | catalog |
@@ -76,6 +78,7 @@ Full request/response detail: [API.md](API.md).
 | GET/PATCH | `/api/quotes/:id` | read: any · write: sales, admin | quotes |
 | POST | `/api/quotes/:id/send` | sales, admin | quotes |
 | POST | `/api/quotes/:id/accept` | sales, admin | quotes |
+| POST | `/api/quotes/:id/reject` | sales, admin | quotes |
 | GET/POST | `/api/orders` | read: any · write: sales, admin | orders |
 | GET/PATCH | `/api/orders/:id` | read: any · write: sales, admin | orders |
 | GET/POST | `/api/orders/:id/payments` | read: any · write: sales, admin | orders |

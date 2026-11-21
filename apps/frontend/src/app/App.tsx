@@ -3,6 +3,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { SignupPage } from "../features/auth/pages/SignupPage";
+import { InquiryPage } from "../features/landing/pages/InquiryPage";
+import { LandingPage } from "../features/landing/pages/LandingPage";
 import { useAuth } from "./AuthProvider";
 import { AppShell } from "./AppShell";
 import { featureRoutes, type FeatureRoute } from "./feature-registry";
@@ -51,7 +53,8 @@ export const App: React.FC = () => {
       <ModeBanner />
       <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/inquire" element={<InquiryPage />} />
           <Route
             path="/login"
             element={
@@ -81,7 +84,7 @@ export const App: React.FC = () => {
               <Route key={feature.id} path={feature.path} element={<FeatureGate feature={feature} />} />
             ))}
           </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </div>

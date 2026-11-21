@@ -80,6 +80,20 @@ Body: `{ email, password }` → `{ …user fields, token }`
 
 ---
 
+## Public landing (no auth)
+
+Active packages only. Inactive packages return 404 on the public detail route.
+
+| Method | Path | Roles | Body / notes |
+| :--- | :--- | :--- | :--- |
+| GET | `/api/public/packages` | public | Active packages. Same `PackageResult` shape, items omitted |
+| GET | `/api/public/packages/:id` | public | Active package including `items` |
+| POST | `/api/public/enquiries` | public | `{ name, phone, email?, addressLine, city, pincode?, customerType?, requestedKw, systemKind?, wantsSubsidy?, notes? }` |
+
+Creates or updates the customer matched by phone, then inserts an enquiry with `source: web_form` and `status: new`. Response: `{ customer: CustomerResult, enquiry: EnquiryResult }`.
+
+---
+
 ## Customers — result: `CustomerResult`
 
 ```ts
@@ -127,7 +141,7 @@ Body: `{ email, password }` → `{ …user fields, token }`
 | Method | Path | Roles | Body / notes |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/enquiries/:id/surveys` | any auth | list for enquiry |
-| POST | `/api/enquiries/:id/surveys` | technician, admin | `{ scheduledAt?, technicianId? }` · result starts `pending`; enquiry → `survey_scheduled` |
+| POST | `/api/enquiries/:id/surveys` | sales, technician, admin | `{ scheduledAt?, technicianId? }` · result starts `pending`; enquiry → `survey_scheduled`. Sales books the visit; they do not record the result |
 | PATCH | `/api/surveys/:id` | technician, admin | `{ roofDirection?, tiltDegrees?, cableDistanceM?, usableAreaSqft?, shadowNotes?, result?, completedAt? }` |
 
 **Rule:** when `result` becomes `approved`, set enquiry status `survey_done`. Quotes should refuse create unless approved (or admin).
@@ -177,9 +191,10 @@ Body: `{ email, password }` → `{ …user fields, token }`
 | GET | `/api/quotes/:id` | any auth | include `lines` |
 | PATCH | `/api/quotes/:id` | sales, admin | draft-only line edits: `{ discountInr?, lines?: [...] }` |
 | POST | `/api/quotes/:id/send` | sales, admin | draft → `sent` |
-| POST | `/api/quotes/:id/accept` | sales, admin | → `accepted`; **creates** `orders` row (`awaiting_payment`); enquiry → `won` |
+| POST | `/api/quotes/:id/accept` | sales, admin | `sent` → `accepted`; **creates** `orders` row (`awaiting_payment`); enquiry → `won` |
+| POST | `/api/quotes/:id/reject` | sales, admin | `draft` or `sent` → `rejected`; enquiry → `lost` |
 
-**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`).
+**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`). Accept and reject are staff actions after the customer answers on a call or WhatsApp. There is no customer login.
 
 ---
 
