@@ -19,30 +19,50 @@ function addUser(user: MockUser) {
 
 addUser({
   userId: "usr-admin-01",
-  fullName: "System Administrator",
-  email: "admin@starter.dev",
-  companyName: "HackCore",
+  fullName: "Director Kaur",
+  email: "admin@sunpower.in",
+  companyName: "SunPower Solutions",
   role: "admin",
   createdAt: "2026-11-04T00:00:00.000Z",
   password: DEMO_PASSWORD
 });
 
 addUser({
-  userId: "usr-manager-01",
-  fullName: "Operations Lead",
-  email: "manager@starter.dev",
-  companyName: "HackCore",
-  role: "manager",
+  userId: "usr-sales-01",
+  fullName: "Priya Shah",
+  email: "sales@sunpower.in",
+  companyName: "SunPower Solutions",
+  role: "sales",
   createdAt: "2026-11-04T00:00:00.000Z",
   password: DEMO_PASSWORD
 });
 
 addUser({
-  userId: "usr-member-01",
-  fullName: "Team Member",
-  email: "member@starter.dev",
-  companyName: "HackCore",
-  role: "member",
+  userId: "usr-warehouse-01",
+  fullName: "Ravi Mehta",
+  email: "warehouse@sunpower.in",
+  companyName: "SunPower Solutions",
+  role: "warehouse",
+  createdAt: "2026-11-04T00:00:00.000Z",
+  password: DEMO_PASSWORD
+});
+
+addUser({
+  userId: "usr-tech-01",
+  fullName: "Harpreet Singh",
+  email: "tech@sunpower.in",
+  companyName: "SunPower Solutions",
+  role: "technician",
+  createdAt: "2026-11-04T00:00:00.000Z",
+  password: DEMO_PASSWORD
+});
+
+addUser({
+  userId: "usr-support-01",
+  fullName: "Neha Gill",
+  email: "support@sunpower.in",
+  companyName: "SunPower Solutions",
+  role: "support",
   createdAt: "2026-11-04T00:00:00.000Z",
   password: DEMO_PASSWORD
 });

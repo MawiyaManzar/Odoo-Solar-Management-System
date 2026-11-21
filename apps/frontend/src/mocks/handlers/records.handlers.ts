@@ -31,7 +31,7 @@ export const recordsHandlers = [
   http.post("/api/records", async ({ request }) => {
     const user = userFromRequest(request);
     if (!user) return unauthorized();
-    if (user.role === "member") return forbidden();
+    if (user.role !== "admin" && user.role !== "sales") return forbidden();
 
     const body = (await request.json()) as RecordInput;
     const record: RecordItem = {
@@ -49,7 +49,7 @@ export const recordsHandlers = [
   http.patch("/api/records/:id", async ({ request, params }) => {
     const user = userFromRequest(request);
     if (!user) return unauthorized();
-    if (user.role === "member") return forbidden();
+    if (user.role !== "admin" && user.role !== "sales") return forbidden();
 
     const index = records.findIndex((item) => item.id === params.id);
     if (index < 0) {

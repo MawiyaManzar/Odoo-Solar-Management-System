@@ -12,9 +12,9 @@ Build in **two phases**. Phase 1 is enough for the happy path (enquiry → quote
 | Phase | Tables | When |
 | --- | --- | --- |
 | **1 — Essential (16)** | `users`, `customers`, `enquiries`, `site_surveys`, `products`, `packages`, `package_items`, `quotes`, `quote_lines`, `orders`, `payments`, `stock_levels`, `serial_units`, `dispatches`, `installations`, `service_tickets` | Foundation commit / first feature branches |
-| **2 — Extra** | `warranty_policies`, `warranties`, `evidences`, `invoices`, `stock_movements`, `subsidy_claims`, `technician_assignments` | After Phase 1 screens work end-to-end |
+| **2 — Extra** | `warranty_policies`, `warranties`, `evidences`, `invoices`, `stock_movements`, `subsidy_claims`, `technician_assignments` | Tables ship in the foundation migration; **APIs** wait until Phase 1 screens work end-to-end |
 
-Do not create Phase 2 tables until Phase 1 APIs and UI are usable. Warranty *display* in Phase 1 can be a simple date derived from `serial_units.delivered_at` + a hard-coded duration on `products`; move to policy tables in Phase 2.
+Phase 2 **tables** are included in the foundation migration so teammates do not fight schema drift. Phase 2 **HTTP routes** stay deferred (see [API.md](API.md)). Warranty *display* in Phase 1 can still use `serial_units.delivered_at` + `products.default_warranty_months`; prefer `warranties` once that feature is wired.
 
 ---
 
@@ -680,10 +680,10 @@ These can wait; they are not required to demonstrate the PDF week narrative.
 
 ## Hand-off checklist for the schema lead
 
-- [ ] Phase 1 tables landed in `apps/backend/src/db/schema/` + migration  
-- [ ] Seed: 1 package (OG-3KW), sample products, 1 demo customer journey through `completed`  
-- [ ] Roles CHECK constraint matches the map above  
-- [ ] No Phase 2 tables blocking the first feature PRs  
-- [ ] This file updated if column names change during foundation commit  
+- [x] Phase 1 + Phase 2 tables landed in `apps/backend/src/db/schema/` + migration  
+- [x] Seed: OG-3KW package, products, Amit Verma job through `completed` (+ sample warranties)  
+- [x] Roles CHECK constraint matches the map above  
+- [x] Phase 2 APIs deferred in [API.md](API.md) / [CONTRACT.md](CONTRACT.md)  
+- [x] Result Zod schemas in `apps/backend/src/contracts/results.ts` 
 
 When a feature branch starts, treat this doc as the contract: do not invent parallel tables for the same concept (e.g. do not add both `jobs` and `orders`).

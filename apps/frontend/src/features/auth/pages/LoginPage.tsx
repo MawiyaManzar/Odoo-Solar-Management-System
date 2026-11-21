@@ -9,7 +9,7 @@ import { AuthLayout } from "../components/AuthLayout";
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@starter.dev");
+  const [email, setEmail] = useState("admin@sunpower.in");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);

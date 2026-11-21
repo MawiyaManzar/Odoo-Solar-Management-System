@@ -12,7 +12,7 @@ export const RecordsPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useRecords();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const canWrite = user?.role === "admin" || user?.role === "manager";
+  const canWrite = user?.role === "admin" || user?.role === "sales";
 
   const totalValue = data.reduce((acc, curr) => acc + curr.value, 0);
   const activeCount = data.filter((record) => record.status === "active").length;

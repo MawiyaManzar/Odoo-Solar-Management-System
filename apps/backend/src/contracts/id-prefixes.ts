@@ -1,0 +1,27 @@
+/** ID prefixes for new rows. Feature services must use these — do not invent parallel schemes. */
+export const ID_PREFIXES = {
+  user: "usr-",
+  customer: "cus-",
+  enquiry: "enq-",
+  siteSurvey: "sur-",
+  product: "prd-",
+  package: "pkg-",
+  packageItem: "pki-",
+  quote: "quo-",
+  quoteLine: "ql-",
+  order: "ord-",
+  payment: "pay-",
+  stockLevel: "stk-",
+  serialUnit: "ser-",
+  dispatch: "dsp-",
+  installation: "ins-",
+  serviceTicket: "tkt-",
+  warrantyPolicy: "wpol-",
+  warranty: "war-",
+  evidence: "evd-",
+  invoice: "inv-",
+  stockMovement: "smv-",
+  subsidyClaim: "sub-",
+  technicianAssignment: "tas-",
+  record: "REC-"
+} as const;

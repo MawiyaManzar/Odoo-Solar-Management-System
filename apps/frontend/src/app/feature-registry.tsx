@@ -15,7 +15,7 @@ export const featureRoutes: FeatureRoute[] = [
     id: "records",
     path: "records",
     label: "Records Console",
-    roles: ["admin", "manager", "member"],
+    roles: ["admin", "sales", "warehouse", "technician", "support"],
     page: RecordsPage
   }
 ];

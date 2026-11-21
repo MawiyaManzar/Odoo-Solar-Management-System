@@ -29,14 +29,14 @@ export async function recordsRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  app.post("/api/records", { preHandler: requireRole("admin", "manager") }, async (request, reply) => {
+  app.post("/api/records", { preHandler: requireRole("admin", "sales") }, async (request, reply) => {
     const body = parseOrReply(recordBodySchema, request.body, reply);
     if (!body) return;
     const record = await createRecord(body);
     return reply.status(201).send({ success: true, data: record, message: "Record created." });
   });
 
-  app.patch("/api/records/:id", { preHandler: requireRole("admin", "manager") }, async (request, reply) => {
+  app.patch("/api/records/:id", { preHandler: requireRole("admin", "sales") }, async (request, reply) => {
     const params = parseOrReply(recordIdSchema, request.params, reply);
     if (!params) return;
     const body = parseOrReply(recordPatchSchema, request.body, reply);

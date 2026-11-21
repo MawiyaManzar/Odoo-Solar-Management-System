@@ -37,7 +37,7 @@ async function runTests() {
   const login = await app.inject({
     method: "POST",
     url: "/api/auth/login",
-    payload: { email: "admin@starter.dev", password: DEV_PASSWORD }
+    payload: { email: "admin@sunpower.in", password: DEV_PASSWORD }
   });
   const loginBody = login.json();
   assert(login.statusCode === 200, "status is 200", state);
@@ -68,8 +68,8 @@ async function runTests() {
   const signupPayload = {
     fullName: "E2E User",
     email,
-    companyName: "HackCore",
-    role: "manager",
+    companyName: "SunPower Solutions",
+    role: "sales",
     password: "Password123!",
     agreeToTerms: true
   };
@@ -92,21 +92,21 @@ async function runTests() {
   const badLogin = await app.inject({
     method: "POST",
     url: "/api/auth/login",
-    payload: { email: "admin@starter.dev", password: "not-the-password" }
+    payload: { email: "admin@sunpower.in", password: "not-the-password" }
   });
   assert(badLogin.statusCode === 401, "status is 401", state);
 
-  console.log("\n9. Member cannot create a record");
-  const memberLogin = await app.inject({
+  console.log("\n9. Technician cannot create a record");
+  const techLogin = await app.inject({
     method: "POST",
     url: "/api/auth/login",
-    payload: { email: "member@starter.dev", password: DEV_PASSWORD }
+    payload: { email: "tech@sunpower.in", password: DEV_PASSWORD }
   });
-  const memberToken = memberLogin.json().data.token;
+  const techToken = techLogin.json().data.token;
   const forbidden = await app.inject({
     method: "POST",
     url: "/api/records",
-    headers: { authorization: `Bearer ${memberToken}` },
+    headers: { authorization: `Bearer ${techToken}` },
     payload: { title: "Blocked", category: "Test", status: "pending", value: 1 }
   });
   assert(forbidden.statusCode === 403, "status is 403", state);

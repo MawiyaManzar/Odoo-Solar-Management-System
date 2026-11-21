@@ -12,14 +12,15 @@ export interface AppConfig {
 }
 
 export const APP_CONFIG: AppConfig = {
-  name: "HackCore",
-  tagline: "Enterprise Modern Template",
-  logoText: "H",
+  name: "SunPower",
+  tagline: "Solar Installation Management",
+  logoText: "S",
   version: "v1.0.0",
   defaultRoles: [
-    { value: "admin", label: "System Administrator" },
-    { value: "manager", label: "Team Manager" },
-    { value: "member", label: "Team Member" }
+    { value: "admin", label: "Director / Admin" },
+    { value: "sales", label: "Sales" },
+    { value: "warehouse", label: "Warehouse" },
+    { value: "technician", label: "Technician" },
+    { value: "support", label: "Support" }
   ]
 };
-

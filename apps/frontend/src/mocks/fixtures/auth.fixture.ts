@@ -5,7 +5,7 @@ export const sampleCreatedUserFixture: SignupResponse = {
   fullName: "Sarah Connor",
   email: "sarah@cyberdyne.com",
   companyName: "Cyberdyne Systems",
-  role: "manager",
+  role: "sales",
   createdAt: "2026-11-04T01:40:00.000Z",
   token: "jwt_starter_sample"
 };
