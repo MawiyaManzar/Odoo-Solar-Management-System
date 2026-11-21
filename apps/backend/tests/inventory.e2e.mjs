@@ -99,7 +99,15 @@ async function runTests() {
     headers: auth(warehouse),
     payload: { orderId, dispatchId: dispatch.id }
   });
-  assert(conflict.statusCode === 404 || conflict.statusCode === 409, "installed serial is not scanned onto a new order", state);
+  assert(conflict.statusCode === 409, "installed serial on another order is 409", state);
+
+  const secondOpen = await app.inject({
+    method: "POST",
+    url: "/api/dispatches",
+    headers: auth(warehouse),
+    payload: { orderId }
+  });
+  assert(secondOpen.statusCode === 409, "second open dispatch is rejected", state);
 
   const added = await app.inject({
     method: "POST",

@@ -1,23 +1,36 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { payCustomerOrder, type CustomerOrder } from "../../customer-quotes/customer-quote.api";
 import { formatInr } from "../../orders/status";
 
-function slice(total: number, ratio: number): number {
-  return Math.round(total * ratio);
+/** Matches backend `minAdvanceInr` / `meetsAdvanceGate` (paise-safe 30%). */
+function minAdvanceInr(totalInr: number): number {
+  const total = Math.round(totalInr * 100);
+  if (total <= 0) return 0;
+  return Math.ceil((total * 3) / 10) / 100;
+}
+
+function halfInr(totalInr: number): number {
+  return Math.round(totalInr * 100) / 200;
 }
 
 export const CustomerPayForm: React.FC<{ order: CustomerOrder; onPaid: () => void }> = ({ order, onPaid }) => {
-  const [amount, setAmount] = useState(String(Math.min(slice(order.totalInr, 0.3), order.balanceInr)));
+  const [amount, setAmount] = useState(String(Math.min(minAdvanceInr(order.totalInr), order.balanceInr)));
   const [reference, setReference] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const canPay = order.balanceInr > 0 && order.status !== "cancelled";
+
+  useEffect(() => {
+    setAmount(String(Math.min(minAdvanceInr(order.totalInr), order.balanceInr)));
+  }, [order.balanceInr, order.totalInr, order.id]);
+
   if (!canPay) return null;
 
-  const choose = (ratio: number) => {
-    setAmount(String(Math.min(slice(order.totalInr, ratio), order.balanceInr)));
+  const choose = (ratio: "advance" | "half") => {
+    const target = ratio === "advance" ? minAdvanceInr(order.totalInr) : halfInr(order.totalInr);
+    setAmount(String(Math.min(target, order.balanceInr)));
   };
 
   const submit = () => {
@@ -53,10 +66,10 @@ export const CustomerPayForm: React.FC<{ order: CustomerOrder; onPaid: () => voi
         Pay in your UPI app, then enter the amount and the UTR here. 30% of {formatInr(order.totalInr)} releases packing.
       </p>
       <div style={{ display: "flex", gap: "8px" }}>
-        <Button type="button" size="sm" variant="outline" onClick={() => choose(0.3)}>
+        <Button type="button" size="sm" variant="outline" onClick={() => choose("advance")}>
           30%
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => choose(0.5)}>
+        <Button type="button" size="sm" variant="outline" onClick={() => choose("half")}>
           50%
         </Button>
       </div>

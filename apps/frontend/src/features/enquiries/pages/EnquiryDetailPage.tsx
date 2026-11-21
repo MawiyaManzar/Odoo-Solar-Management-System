@@ -107,13 +107,29 @@ export const EnquiryDetailPage: React.FC = () => {
     }
   };
 
+  const surveyMinLocal = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}T00:00`;
+  })();
+
   const bookSurvey = async () => {
-    setSaving(true);
     setError(null);
+    if (!when) {
+      setError("Choose a survey date and time.");
+      return;
+    }
+    if (when < surveyMinLocal) {
+      setError("Survey can only be scheduled from today onwards.");
+      return;
+    }
+    setSaving(true);
     try {
       await scheduleSurvey(enquiryId, {
         technicianId: technicianId || undefined,
-        scheduledAt: when ? new Date(when).toISOString() : undefined
+        scheduledAt: new Date(when).toISOString()
       });
       setInfo("Survey scheduled.");
       await load();
@@ -223,8 +239,18 @@ export const EnquiryDetailPage: React.FC = () => {
                   onChange={(event) => setTechnicianId(event.target.value)}
                   options={techs.map((item) => ({ value: item.id, label: item.name }))}
                 />
-                <Input label="When" type="datetime-local" value={when} onChange={(event) => setWhen(event.target.value)} />
-                <Button type="button" variant="secondary" onClick={() => void bookSurvey()} disabled={saving || techs.length === 0}>Schedule survey</Button>
+                <Input
+                  label="When"
+                  type="datetime-local"
+                  min={surveyMinLocal}
+                  value={when}
+                  onChange={(event) => setWhen(event.target.value)}
+                  required
+                  helperText="Today or a future date"
+                />
+                <Button type="button" variant="secondary" onClick={() => void bookSurvey()} disabled={saving || techs.length === 0 || !when}>
+                  Schedule survey
+                </Button>
               </section>
             )}
             <section style={{ borderTop: "var(--border-default)", paddingTop: "12px" }}>

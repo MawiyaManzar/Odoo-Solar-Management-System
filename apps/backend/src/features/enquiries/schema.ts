@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ENQUIRY_STATUSES, ENQUIRY_SYSTEM_KINDS, SURVEY_RESULTS } from "../../db/schema/enquiries.js";
 import { USER_ROLES } from "../../db/schema/users.js";
+import { isBeforeTodayInIndia } from "../../lib/dates.js";
 
 export const idParamSchema = z.object({ id: z.string().min(1) });
 
@@ -26,10 +27,21 @@ export const enquiryPatchSchema = z.object({
   status: z.enum(ENQUIRY_STATUSES).optional()
 });
 
-export const surveyCreateSchema = z.object({
-  scheduledAt: z.string().datetime({ offset: true }).optional(),
-  technicianId: z.string().min(1).optional()
-});
+export const surveyCreateSchema = z
+  .object({
+    scheduledAt: z.string().datetime({ offset: true }).optional(),
+    technicianId: z.string().min(1).optional()
+  })
+  .superRefine((value, ctx) => {
+    if (!value.scheduledAt) return;
+    if (isBeforeTodayInIndia(value.scheduledAt)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["scheduledAt"],
+        message: "Survey can only be scheduled from today onwards."
+      });
+    }
+  });
 
 export const surveyPatchSchema = z.object({
   roofDirection: z.string().nullable().optional(),

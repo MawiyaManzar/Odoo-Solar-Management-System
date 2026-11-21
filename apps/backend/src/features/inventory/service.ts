@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { DispatchResult, SerialUnitResult, StockLevelResult } from "../../contracts/results.js";
 import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { db } from "../../db/client.js";
@@ -127,20 +127,38 @@ export async function listSerials(query: {
   return rows.map((row) => toSerial(row.serial, { sku: row.sku, name: row.name }));
 }
 
+type DbTx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function bumpStock(tx: DbTx, productId: string, deltaOnHand: number): Promise<void> {
+  const [current] = await tx.select().from(stockLevels).where(eq(stockLevels.productId, productId)).limit(1);
+  const nextOnHand = (current?.qtyOnHand ?? 0) + deltaOnHand;
+  if (nextOnHand < 0) throw new ServiceError(422, "On hand cannot be negative.");
+  const values = { qtyOnHand: nextOnHand, qtyReserved: current?.qtyReserved ?? 0, updatedAt: new Date() };
+  if (current) {
+    await tx.update(stockLevels).set(values).where(eq(stockLevels.id, current.id));
+    return;
+  }
+  await tx.insert(stockLevels).values({ id: newId(ID_PREFIXES.stockLevel), productId, ...values });
+}
+
 export async function createSerial(input: SerialCreate): Promise<SerialView> {
   const [product] = await db.select().from(products).where(eq(products.id, input.productId)).limit(1);
   if (!product) throw new ServiceError(404, "Product not found.");
   if (!product.isSerialized) throw new ServiceError(422, "Only serialized products can take a serial number.");
   try {
-    const [row] = await db
-      .insert(serialUnits)
-      .values({
-        id: newId(ID_PREFIXES.serialUnit),
-        productId: product.id,
-        serialNumber: input.serialNumber,
-        status: "in_stock"
-      })
-      .returning();
+    const row = await db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(serialUnits)
+        .values({
+          id: newId(ID_PREFIXES.serialUnit),
+          productId: product.id,
+          serialNumber: input.serialNumber,
+          status: "in_stock"
+        })
+        .returning();
+      await bumpStock(tx, product.id, 1);
+      return created;
+    });
     return toSerial(row, product);
   } catch (error) {
     if (isUniqueViolation(error)) throw new ServiceError(409, "That serial number is already in stock.");
@@ -150,7 +168,13 @@ export async function createSerial(input: SerialCreate): Promise<SerialView> {
 
 export async function scanOut(serialId: string, input: ScanOut): Promise<SerialView> {
   const [serial] = await db.select().from(serialUnits).where(eq(serialUnits.id, serialId)).limit(1);
-  if (!serial || serial.status !== "in_stock") throw new ServiceError(404, "Serial not in stock.");
+  if (!serial) throw new ServiceError(404, "Serial not in stock.");
+  if (serial.status !== "in_stock") {
+    if (serial.orderId && serial.orderId !== input.orderId) {
+      throw new ServiceError(409, "Serial is already on another order.");
+    }
+    throw new ServiceError(404, "Serial not in stock.");
+  }
   if (serial.orderId && serial.orderId !== input.orderId) {
     throw new ServiceError(409, "Serial is already on another order.");
   }
@@ -162,15 +186,19 @@ export async function scanOut(serialId: string, input: ScanOut): Promise<SerialV
   }
   const [product] = await db.select().from(products).where(eq(products.id, serial.productId)).limit(1);
   if (!product) throw new ServiceError(404, "Product not found.");
-  const [row] = await db
-    .update(serialUnits)
-    .set({
-      status: "dispatched",
-      orderId: input.orderId,
-      dispatchId: dispatch.id
-    })
-    .where(eq(serialUnits.id, serial.id))
-    .returning();
+  const row = await db.transaction(async (tx) => {
+    const [updated] = await tx
+      .update(serialUnits)
+      .set({
+        status: "dispatched",
+        orderId: input.orderId,
+        dispatchId: dispatch.id
+      })
+      .where(eq(serialUnits.id, serial.id))
+      .returning();
+    await bumpStock(tx, serial.productId, -1);
+    return updated;
+  });
   return toSerial(row, product);
 }
 
@@ -223,18 +251,19 @@ export async function getDispatch(id: string): Promise<DispatchView> {
 }
 
 export async function createDispatch(input: DispatchCreate, packedBy: string): Promise<DispatchView> {
-  const [order] = await db.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
-  if (!order) throw new ServiceError(404, "Order not found.");
-  if (!DISPATCHABLE.has(order.status)) {
-    throw new ServiceError(422, "Record at least 30% before packing this order.");
-  }
-  const open = await db
-    .select({ id: dispatches.id })
-    .from(dispatches)
-    .where(and(eq(dispatches.orderId, order.id), inArray(dispatches.status, ["packing", "in_transit"])));
-  if (open.length > 0) throw new ServiceError(409, "This order already has an open dispatch.");
   const id = newId(ID_PREFIXES.dispatch);
   await db.transaction(async (tx) => {
+    await tx.execute(sql`select id from orders where id = ${input.orderId} for update`);
+    const [order] = await tx.select().from(orders).where(eq(orders.id, input.orderId)).limit(1);
+    if (!order) throw new ServiceError(404, "Order not found.");
+    if (!DISPATCHABLE.has(order.status)) {
+      throw new ServiceError(422, "Record at least 30% before packing this order.");
+    }
+    const open = await tx
+      .select({ id: dispatches.id })
+      .from(dispatches)
+      .where(and(eq(dispatches.orderId, order.id), inArray(dispatches.status, ["packing", "in_transit"])));
+    if (open.length > 0) throw new ServiceError(409, "This order already has an open dispatch.");
     await tx.insert(dispatches).values({
       id,
       orderId: order.id,

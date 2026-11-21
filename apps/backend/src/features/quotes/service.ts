@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import type { QuoteLineResult, QuoteResult } from "../../contracts/results.js";
 import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { db } from "../../db/client.js";
@@ -11,6 +11,25 @@ import { enquiryHasApprovedSurvey, getEnquiry } from "../enquiries/service.js";
 import { newId } from "../../lib/ids.js";
 import { ServiceError } from "../../lib/service-error.js";
 import type { QuoteCreate, QuotePatch } from "./schema.js";
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isPastValidUntil(validUntil: string | null | undefined): boolean {
+  if (!validUntil) return false;
+  return validUntil < todayIsoDate();
+}
+
+async function expireIfNeeded(row: typeof quotes.$inferSelect): Promise<typeof quotes.$inferSelect> {
+  if (row.status !== "sent" || !isPastValidUntil(row.validUntil)) return row;
+  const [updated] = await db
+    .update(quotes)
+    .set({ status: "expired", updatedAt: new Date() })
+    .where(and(eq(quotes.id, row.id), eq(quotes.status, "sent")))
+    .returning();
+  return updated ?? { ...row, status: "expired" };
+}
 
 export interface QuoteView extends QuoteResult {
   customerName: string;
@@ -76,7 +95,9 @@ export async function listQuotes(query: { status?: QuoteStatus; customerId?: str
     .orderBy(desc(quotes.createdAt));
   const views: QuoteView[] = [];
   for (const row of rows) {
-    views.push(toQuote(row, await extras(row)));
+    const fresh = await expireIfNeeded(row);
+    if (query.status && fresh.status !== query.status) continue;
+    views.push(toQuote(fresh, await extras(fresh)));
   }
   return views;
 }
@@ -84,7 +105,8 @@ export async function listQuotes(query: { status?: QuoteStatus; customerId?: str
 export async function getQuote(id: string): Promise<QuoteView> {
   const [row] = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
   if (!row) throw new ServiceError(404, "Quote not found.");
-  return toQuote(row, await extras(row), await linesFor(id));
+  const fresh = await expireIfNeeded(row);
+  return toQuote(fresh, await extras(fresh), await linesFor(id));
 }
 
 export async function createQuote(input: QuoteCreate, actor: { id: string; role: string }): Promise<QuoteView> {
@@ -181,14 +203,29 @@ export async function sendQuote(id: string): Promise<QuoteView> {
   const current = await getQuote(id);
   if (current.status !== "draft") throw new ServiceError(400, "Only a draft quote can be sent.");
   if (!current.lines || current.lines.length === 0) throw new ServiceError(400, "Add at least one line before sending.");
+  if (isPastValidUntil(current.validUntil)) {
+    throw new ServiceError(400, "Extend the valid-until date before sending this quote.");
+  }
   await db.update(quotes).set({ status: "sent", updatedAt: new Date() }).where(eq(quotes.id, id));
   return getQuote(id);
 }
 
 export async function acceptQuote(id: string): Promise<QuoteView> {
   const current = await getQuote(id);
+  if (current.status === "expired") throw new ServiceError(400, "This quote has expired.");
   if (current.status !== "sent") throw new ServiceError(400, "Send the quote before recording acceptance.");
   const enquiry = await getEnquiry(current.enquiryId);
+  if (enquiry.status === "won" || enquiry.status === "lost") {
+    throw new ServiceError(409, "This enquiry is already closed.");
+  }
+  const [existingOrder] = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(eq(orders.enquiryId, current.enquiryId))
+    .limit(1);
+  if (existingOrder) {
+    throw new ServiceError(409, "This enquiry already has an order.");
+  }
   const [pkg] = current.packageId ? await db.select().from(packages).where(eq(packages.id, current.packageId)).limit(1) : [undefined];
   const [customer] = await db.select().from(customers).where(eq(customers.id, current.customerId)).limit(1);
   if (!customer) throw new ServiceError(404, "Customer not found.");
@@ -198,6 +235,16 @@ export async function acceptQuote(id: string): Promise<QuoteView> {
   const siteAddress = [customer.addressLine, customer.city, customer.pincode].filter(Boolean).join(", ");
   await db.transaction(async (tx) => {
     await tx.update(quotes).set({ status: "accepted", updatedAt: new Date() }).where(eq(quotes.id, id));
+    await tx
+      .update(quotes)
+      .set({ status: "rejected", updatedAt: new Date() })
+      .where(
+        and(
+          eq(quotes.enquiryId, current.enquiryId),
+          ne(quotes.id, id),
+          inArray(quotes.status, ["draft", "sent"])
+        )
+      );
     await tx.insert(orders).values({
       id: newId(ID_PREFIXES.order),
       quoteId: id,
@@ -221,6 +268,10 @@ export async function rejectQuote(id: string): Promise<QuoteView> {
   }
   await db.transaction(async (tx) => {
     await tx.update(quotes).set({ status: "rejected", updatedAt: new Date() }).where(eq(quotes.id, id));
+    await tx
+      .update(quotes)
+      .set({ status: "rejected", updatedAt: new Date() })
+      .where(and(eq(quotes.enquiryId, current.enquiryId), inArray(quotes.status, ["draft", "sent"])));
     await tx.update(enquiries).set({ status: "lost", updatedAt: new Date() }).where(eq(enquiries.id, current.enquiryId));
   });
   return getQuote(id);

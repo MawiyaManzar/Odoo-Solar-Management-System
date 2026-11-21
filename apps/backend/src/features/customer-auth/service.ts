@@ -1,5 +1,5 @@
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { db } from "../../db/client.js";
 import { customerAccounts, customerOtps } from "../../db/schema/customer-portal.js";
@@ -164,17 +164,42 @@ export interface CustomerOrderView {
 
 export async function listCustomerOrders(customerId: string): Promise<CustomerOrderView[]> {
   const orderRows = await db.select().from(orders).where(eq(orders.customerId, customerId)).orderBy(desc(orders.createdAt));
-  const views: CustomerOrderView[] = [];
-  for (const order of orderRows) {
-    const paymentRows = await db.select().from(payments).where(eq(payments.orderId, order.id)).orderBy(asc(payments.paidAt));
-    const dispatchRows = await db.select().from(dispatches).where(eq(dispatches.orderId, order.id));
-    const serialRows = await db
+  if (orderRows.length === 0) return [];
+  const orderIds = orderRows.map((row) => row.id);
+  const [paymentRows, dispatchRows, serialRows] = await Promise.all([
+    db.select().from(payments).where(inArray(payments.orderId, orderIds)).orderBy(asc(payments.paidAt)),
+    db.select().from(dispatches).where(inArray(dispatches.orderId, orderIds)),
+    db
       .select({ serial: serialUnits, productName: products.name, warrantyMonths: products.defaultWarrantyMonths })
       .from(serialUnits)
       .innerJoin(products, eq(products.id, serialUnits.productId))
-      .where(eq(serialUnits.orderId, order.id));
-    const paidInr = paymentRows.reduce((sum, row) => sum + row.amountInr, 0);
-    views.push({
+      .where(inArray(serialUnits.orderId, orderIds))
+  ]);
+  const paymentsByOrder = new Map<string, typeof paymentRows>();
+  for (const row of paymentRows) {
+    const list = paymentsByOrder.get(row.orderId) ?? [];
+    list.push(row);
+    paymentsByOrder.set(row.orderId, list);
+  }
+  const dispatchesByOrder = new Map<string, typeof dispatchRows>();
+  for (const row of dispatchRows) {
+    const list = dispatchesByOrder.get(row.orderId) ?? [];
+    list.push(row);
+    dispatchesByOrder.set(row.orderId, list);
+  }
+  const serialsByOrder = new Map<string, typeof serialRows>();
+  for (const row of serialRows) {
+    if (!row.serial.orderId) continue;
+    const list = serialsByOrder.get(row.serial.orderId) ?? [];
+    list.push(row);
+    serialsByOrder.set(row.serial.orderId, list);
+  }
+  return orderRows.map((order) => {
+    const orderPayments = paymentsByOrder.get(order.id) ?? [];
+    const orderDispatches = dispatchesByOrder.get(order.id) ?? [];
+    const orderSerials = serialsByOrder.get(order.id) ?? [];
+    const paidInr = orderPayments.reduce((sum, row) => sum + row.amountInr, 0);
+    return {
       id: order.id,
       status: order.status,
       systemKw: order.systemKw,
@@ -183,7 +208,7 @@ export async function listCustomerOrders(customerId: string): Promise<CustomerOr
       totalInr: order.totalInr,
       paidInr,
       balanceInr: Math.max(order.totalInr - paidInr, 0),
-      payments: paymentRows.map((row) => ({
+      payments: orderPayments.map((row) => ({
         id: row.id,
         amountInr: row.amountInr,
         kind: row.kind,
@@ -191,14 +216,14 @@ export async function listCustomerOrders(customerId: string): Promise<CustomerOr
         paidAt: row.paidAt.toISOString(),
         reference: row.reference
       })),
-      dispatches: dispatchRows.map((row) => ({
+      dispatches: orderDispatches.map((row) => ({
         id: row.id,
         status: row.status,
         dispatchedAt: row.dispatchedAt ? row.dispatchedAt.toISOString() : null,
         deliveredAt: row.deliveredAt ? row.deliveredAt.toISOString() : null,
         vehicleNotes: row.vehicleNotes
       })),
-      serials: serialRows.map((row) => {
+      serials: orderSerials.map((row) => {
         const deliveredAt = row.serial.deliveredAt;
         const ends = deliveredAt && row.warrantyMonths != null ? addMonths(deliveredAt, row.warrantyMonths) : null;
         return {
@@ -211,9 +236,8 @@ export async function listCustomerOrders(customerId: string): Promise<CustomerOr
           underWarranty: ends ? Date.now() <= ends.getTime() : null
         };
       })
-    });
-  }
-  return views;
+    };
+  });
 }
 
 export async function getOwnedQuote(quoteId: string, customerId: string): Promise<QuoteView> {
@@ -230,7 +254,7 @@ export async function recordCustomerPayment(
 ) {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order || order.customerId !== customerId) throw new ServiceError(404, "Order not found.");
-  return recordPayment(orderId, { ...input, method: "upi" }, null);
+  return recordPayment(orderId, { ...input, method: "upi" }, null, { capToBalance: true });
 }
 
 export async function customerDecide(quoteId: string, customerId: string, decision: "accept" | "reject"): Promise<QuoteView> {

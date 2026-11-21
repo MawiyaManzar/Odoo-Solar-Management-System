@@ -97,7 +97,9 @@ export const CustomerJobsPage: React.FC = () => {
                 {serial.productName} · {serial.serialNumber}
                 {serial.warrantyEndsAt
                   ? ` · until ${new Date(serial.warrantyEndsAt).toLocaleDateString("en-IN")}`
-                  : " · warranty not started"}
+                  : serial.deliveredAt
+                    ? " · no warranty period on file"
+                    : " · warranty not started"}
                 {serial.underWarranty === true && " · Under warranty"}
                 {serial.underWarranty === false && " · Out of warranty"}
               </p>

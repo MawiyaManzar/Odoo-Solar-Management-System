@@ -108,6 +108,28 @@ async function runTests() {
   });
   assert(foreign.statusCode === 404, "unknown order is 404", state);
 
+  const overpay = await app.inject({
+    method: "POST",
+    url: `/api/customer/orders/${orderId}/payments`,
+    headers: auth,
+    payload: { amountInr: 70001, kind: "balance", reference: "UTR70001X" }
+  });
+  assert(overpay.statusCode === 422, "customer cannot pay more than the balance", state);
+
+  const adminSignup = await app.inject({
+    method: "POST",
+    url: "/api/auth/signup",
+    payload: {
+      fullName: "Bad Admin",
+      email: `bad-admin-${suffix}@example.com`,
+      companyName: "Hack",
+      role: "admin",
+      password: "password1",
+      agreeToTerms: true
+    }
+  });
+  assert(adminSignup.statusCode === 400, "public signup cannot create admin", state);
+
   await app.close();
   console.log(`\n${state.passed} passed, ${state.failed} failed`);
   if (state.failed > 0) process.exitCode = 1;

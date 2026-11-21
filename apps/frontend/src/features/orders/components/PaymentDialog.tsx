@@ -28,6 +28,10 @@ export const PaymentDialog: React.FC<{ orderId: string; open: boolean; onClose: 
       setError("Amount must be greater than zero.");
       return;
     }
+    if (method === "upi" && reference.trim().length < 6) {
+      setError("Enter the UPI UTR (at least 6 characters).");
+      return;
+    }
     setSaving(true);
     setError(null);
     recordPayment(orderId, {
@@ -52,7 +56,13 @@ export const PaymentDialog: React.FC<{ orderId: string; open: boolean; onClose: 
         <Input label="Amount (INR)" type="number" min="1" value={amount} onChange={(event) => setAmount(event.target.value)} required />
         <Select label="Kind" value={kind} options={KINDS.map((value) => ({ value, label: value }))} onChange={(event) => setKind(event.target.value as PaymentKind)} />
         <Select label="Method" value={method} options={METHODS.map((value) => ({ value, label: value.toUpperCase() }))} onChange={(event) => setMethod(event.target.value as PaymentMethod)} />
-        <Input label="Reference (UTR or receipt)" value={reference} onChange={(event) => setReference(event.target.value)} />
+        <Input
+          label={method === "upi" ? "UPI UTR" : "Reference (receipt)"}
+          value={reference}
+          onChange={(event) => setReference(event.target.value)}
+          required={method === "upi"}
+          helperText={method === "upi" ? "At least 6 characters" : undefined}
+        />
         {error && <p style={{ color: "var(--danger-text)", margin: 0 }}>{error}</p>}
         <Button variant="primary" onClick={submit} isLoading={saving}>
           Save payment

@@ -1,13 +1,17 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { EnquiryResult, SiteSurveyResult } from "../../contracts/results.js";
 import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { db } from "../../db/client.js";
 import { customers } from "../../db/schema/customers.js";
 import { enquiries, siteSurveys, type EnquiryStatus } from "../../db/schema/enquiries.js";
+import { quotes } from "../../db/schema/quotes.js";
 import { users, type UserRole } from "../../db/schema/users.js";
+import { isBeforeTodayInIndia } from "../../lib/dates.js";
 import { newId } from "../../lib/ids.js";
 import { ServiceError } from "../../lib/service-error.js";
 import type { EnquiryPatch, SurveyCreate, SurveyPatch } from "./schema.js";
+
+const SURVEY_SCHEDULE_STATUSES = new Set<EnquiryStatus>(["new", "qualifying", "survey_scheduled"]);
 
 export interface EnquiryView extends EnquiryResult {
   customerName: string;
@@ -102,21 +106,30 @@ export async function updateEnquiry(id: string, input: EnquiryPatch): Promise<En
   if (current.status === "won" || current.status === "lost") {
     throw new ServiceError(400, "This enquiry is already closed.");
   }
-  await db
-    .update(enquiries)
-    .set({
-      requestedKw: input.requestedKw ?? current.requestedKw,
-      systemKind: input.systemKind === undefined ? current.systemKind : input.systemKind,
-      wantsSubsidy: input.wantsSubsidy ?? current.wantsSubsidy,
-      monthlyBillInr: input.monthlyBillInr === undefined ? current.monthlyBillInr : input.monthlyBillInr,
-      roofAreaSqft: input.roofAreaSqft === undefined ? current.roofAreaSqft : input.roofAreaSqft,
-      gridSuitable: input.gridSuitable === undefined ? current.gridSuitable : input.gridSuitable,
-      notes: input.notes === undefined ? current.notes : input.notes,
-      assignedTo: input.assignedTo === undefined ? current.assignedTo : input.assignedTo,
-      status: input.status ?? current.status,
-      updatedAt: new Date()
-    })
-    .where(eq(enquiries.id, id));
+  const nextStatus = input.status ?? current.status;
+  await db.transaction(async (tx) => {
+    await tx
+      .update(enquiries)
+      .set({
+        requestedKw: input.requestedKw ?? current.requestedKw,
+        systemKind: input.systemKind === undefined ? current.systemKind : input.systemKind,
+        wantsSubsidy: input.wantsSubsidy ?? current.wantsSubsidy,
+        monthlyBillInr: input.monthlyBillInr === undefined ? current.monthlyBillInr : input.monthlyBillInr,
+        roofAreaSqft: input.roofAreaSqft === undefined ? current.roofAreaSqft : input.roofAreaSqft,
+        gridSuitable: input.gridSuitable === undefined ? current.gridSuitable : input.gridSuitable,
+        notes: input.notes === undefined ? current.notes : input.notes,
+        assignedTo: input.assignedTo === undefined ? current.assignedTo : input.assignedTo,
+        status: nextStatus,
+        updatedAt: new Date()
+      })
+      .where(eq(enquiries.id, id));
+    if (nextStatus === "lost") {
+      await tx
+        .update(quotes)
+        .set({ status: "rejected", updatedAt: new Date() })
+        .where(and(eq(quotes.enquiryId, id), inArray(quotes.status, ["draft", "sent"])));
+    }
+  });
   return getEnquiry(id);
 }
 
@@ -131,6 +144,9 @@ export async function createSurvey(enquiryId: string, input: SurveyCreate): Prom
   if (enquiry.status === "won" || enquiry.status === "lost") {
     throw new ServiceError(400, "This enquiry is already closed.");
   }
+  if (input.scheduledAt && isBeforeTodayInIndia(input.scheduledAt)) {
+    throw new ServiceError(400, "Survey can only be scheduled from today onwards.");
+  }
   const [row] = await db
     .insert(siteSurveys)
     .values({
@@ -141,7 +157,9 @@ export async function createSurvey(enquiryId: string, input: SurveyCreate): Prom
       result: "pending"
     })
     .returning();
-  await db.update(enquiries).set({ status: "survey_scheduled", updatedAt: new Date() }).where(eq(enquiries.id, enquiryId));
+  if (SURVEY_SCHEDULE_STATUSES.has(enquiry.status as EnquiryStatus)) {
+    await db.update(enquiries).set({ status: "survey_scheduled", updatedAt: new Date() }).where(eq(enquiries.id, enquiryId));
+  }
   return toSurvey(row);
 }
 
@@ -171,6 +189,11 @@ export async function updateSurvey(id: string, input: SurveyPatch): Promise<Site
     .returning();
   if (result === "approved") {
     await db.update(enquiries).set({ status: "survey_done", updatedAt: new Date() }).where(eq(enquiries.id, current.enquiryId));
+  } else if (result === "rejected") {
+    const enquiry = await getEnquiry(current.enquiryId);
+    if (enquiry.status === "survey_scheduled") {
+      await db.update(enquiries).set({ status: "qualifying", updatedAt: new Date() }).where(eq(enquiries.id, current.enquiryId));
+    }
   }
   return toSurvey(row);
 }

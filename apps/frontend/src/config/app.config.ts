@@ -8,6 +8,8 @@ export interface AppConfig {
   tagline: string;
   version: string;
   defaultRoles: AppRoleOption[];
+  /** Roles offered on public staff signup — admin is seed-only. */
+  signupRoles: AppRoleOption[];
 }
 
 export const APP_CONFIG: AppConfig = {
@@ -16,6 +18,12 @@ export const APP_CONFIG: AppConfig = {
   version: "v1.0.0",
   defaultRoles: [
     { value: "admin", label: "Director / Admin" },
+    { value: "sales", label: "Sales" },
+    { value: "warehouse", label: "Warehouse" },
+    { value: "technician", label: "Technician" },
+    { value: "support", label: "Support" }
+  ],
+  signupRoles: [
     { value: "sales", label: "Sales" },
     { value: "warehouse", label: "Warehouse" },
     { value: "technician", label: "Technician" },

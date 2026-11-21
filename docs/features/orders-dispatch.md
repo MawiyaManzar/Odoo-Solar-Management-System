@@ -26,7 +26,7 @@ Owner: orders-dispatch | Branch: feat/orders-dispatch | Status: verified
 | Adjust stock, add serial, scan-out, create/move/deliver dispatch | yes | no | yes | no | no |
 | List technicians via existing `GET /api/staff?role=technician` | yes | yes | yes | yes | yes |
 
-Customer portal stays read-only. It does not record payments.
+Customer portal records UPI payments on own orders (`POST /api/customer/orders/:id/payments`). Staff still use `/api/orders/:id/payments`.
 
 ### API contract
 
@@ -41,7 +41,7 @@ Stock rows add `productSku`, `productName`. Serial rows add `productName`, `prod
 | GET | `/api/orders?status=` | any staff | Optional status enum |
 | POST | `/api/orders` | sales, admin | `{ quoteId }` only if quote is accepted and has no order. 409 if an order exists |
 | GET | `/api/orders/:id` | any staff | Detail shape above. 404 if missing |
-| PATCH | `/api/orders/:id` | sales, admin | `{ scheduledInstallAt?, siteAddress?, status? }`. `status` may only be `cancelled`, and not once dispatched, installing, or completed |
+| PATCH | `/api/orders/:id` | sales, admin | `{ scheduledInstallAt?, siteAddress?, status? }`. `status` may only be `cancelled`, and not once packing, dispatched, installing, or completed. Setting `scheduledInstallAt` requires the 30% gate (same as schedule) |
 | POST | `/api/orders/:id/schedule` | sales, admin | `{ scheduledInstallAt, leadTechnicianId }`. Order must be paid or later and not cancelled. Upserts installation as `scheduled` unless it is already completed |
 | GET | `/api/orders/:id/payments` | any staff | `PaymentResult[]` |
 | POST | `/api/orders/:id/payments` | sales, admin | `{ amountInr, kind, method?, reference? }`. 201. Applies the advance gate |
@@ -83,7 +83,7 @@ No mock handlers for these staff endpoints.
 | # | Assumption | Decision |
 | :--- | :--- | :--- |
 | 1 | Who owns payments and dispatch | This branch owns both |
-| 2 | Who records payment | Staff records UPI/NEFT/cash/cheque plus a reference. No payment gateway. Customer portal stays read-only |
+| 2 | Who records payment | Staff records UPI/NEFT/cash/cheque plus a reference. Customer portal records UPI + UTR on own orders. No payment gateway |
 | 3 | When packing may start | Paid sum ≥ 30% of order total (50% also qualifies). Status becomes `paid` |
 | 4 | Technician assignment | Sales sets install datetime and lead technician here. Full crew completion screens stay out of scope |
 | 5 | In transit | `POST /api/dispatches/:id/in-transit` exists because the warehouse screen needs it and API.md had no path for it |

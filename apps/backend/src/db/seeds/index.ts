@@ -223,7 +223,7 @@ export async function runDatabaseSeed(): Promise<void> {
   console.log(`[seed] demo password: ${DEV_PASSWORD}`);
 }
 
-const invoked = process.argv[1] ?? "";
+const invoked = (process.argv[1] ?? "").replaceAll("\\", "/");
 if (invoked.endsWith("seeds/index.ts") || invoked.endsWith("seeds/index.js")) {
   runDatabaseSeed()
     .then(() => closePool())

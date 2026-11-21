@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { OrderResult, PaymentResult } from "../../contracts/results.js";
 import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { db } from "../../db/client.js";
@@ -10,11 +10,12 @@ import { installations } from "../../db/schema/installations.js";
 import { orders, payments, type OrderStatus } from "../../db/schema/orders.js";
 import { quotes } from "../../db/schema/quotes.js";
 import { users } from "../../db/schema/users.js";
+import { isBeforeTodayInIndia } from "../../lib/dates.js";
 import { newId } from "../../lib/ids.js";
 import { ServiceError } from "../../lib/service-error.js";
 import type { OrderCreate, OrderPatch, PaymentInput, ScheduleInput } from "./schema.js";
 
-const LOCKED_CANCEL = new Set<OrderStatus>(["dispatched", "installing", "completed"]);
+const LOCKED_CANCEL = new Set<OrderStatus>(["packing", "dispatched", "installing", "completed"]);
 const SCHEDULE_BLOCKED = new Set<OrderStatus>(["awaiting_payment", "cancelled"]);
 
 export interface OrderListItem extends OrderResult {
@@ -39,6 +40,13 @@ export function meetsAdvanceGate(paidInr: number, totalInr: number): boolean {
   const total = Math.round(totalInr * 100);
   if (total <= 0) return paid >= 0;
   return paid * 10 >= total * 3;
+}
+
+/** Smallest rupee amount that satisfies the 30% packing gate for `totalInr`. */
+export function minAdvanceInr(totalInr: number): number {
+  const total = Math.round(totalInr * 100);
+  if (total <= 0) return 0;
+  return Math.ceil((total * 3) / 10) / 100;
 }
 
 function toPayment(row: typeof payments.$inferSelect): PaymentResult {
@@ -172,7 +180,15 @@ export async function updateOrder(id: string, input: OrderPatch): Promise<OrderD
   if (input.status === "cancelled") {
     if (order.status === "cancelled") throw new ServiceError(409, "This order is already cancelled.");
     if (LOCKED_CANCEL.has(order.status as OrderStatus)) {
-      throw new ServiceError(422, "Cancel is blocked once the order is dispatched.");
+      throw new ServiceError(422, "Cancel is blocked once packing has started.");
+    }
+  }
+  if (input.scheduledInstallAt !== undefined && input.scheduledInstallAt !== null) {
+    if (SCHEDULE_BLOCKED.has(order.status as OrderStatus)) {
+      throw new ServiceError(422, "Record at least 30% before scheduling installation.");
+    }
+    if (isBeforeTodayInIndia(input.scheduledInstallAt)) {
+      throw new ServiceError(400, "Installation can only be scheduled from today onwards.");
     }
   }
   await db
@@ -194,8 +210,14 @@ export async function updateOrder(id: string, input: OrderPatch): Promise<OrderD
 
 export async function scheduleOrder(id: string, input: ScheduleInput): Promise<OrderDetail> {
   const { order } = await loadOrder(id);
-  if (SCHEDULE_BLOCKED.has(order.status as OrderStatus)) {
+  if (order.status === "cancelled") {
+    throw new ServiceError(422, "Cancelled orders cannot be scheduled.");
+  }
+  if (order.status === "awaiting_payment") {
     throw new ServiceError(422, "Record at least 30% before scheduling installation.");
+  }
+  if (isBeforeTodayInIndia(input.scheduledInstallAt)) {
+    throw new ServiceError(400, "Installation can only be scheduled from today onwards.");
   }
   const [tech] = await db.select().from(users).where(eq(users.id, input.leadTechnicianId)).limit(1);
   if (!tech || tech.role !== "technician" || !tech.isActive) {
@@ -228,27 +250,46 @@ export async function scheduleOrder(id: string, input: ScheduleInput): Promise<O
   return getOrder(id);
 }
 
-export async function recordPayment(orderId: string, input: PaymentInput, recordedBy: string | null): Promise<PaymentResult> {
-  const { order } = await loadOrder(orderId);
-  if (order.status === "cancelled") throw new ServiceError(422, "Cancelled orders cannot take payments.");
+export async function recordPayment(
+  orderId: string,
+  input: PaymentInput,
+  recordedBy: string | null,
+  options?: { capToBalance?: boolean }
+): Promise<PaymentResult> {
+  const amountInr = money(input.amountInr);
+  const reference = input.reference?.trim() || null;
   const paymentId = newId(ID_PREFIXES.payment);
   let created: typeof payments.$inferSelect | undefined;
   await db.transaction(async (tx) => {
+    await tx.execute(sql`select id from orders where id = ${orderId} for update`);
+    const [order] = await tx.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    if (!order) throw new ServiceError(404, "Order not found.");
+    if (order.status === "cancelled") throw new ServiceError(422, "Cancelled orders cannot take payments.");
+    // Balance after dispatch/install/complete is allowed; only cancelled is blocked.
+    const existing = await tx.select().from(payments).where(eq(payments.orderId, orderId));
+    if (reference) {
+      const duplicate = existing.some((row) => row.reference === reference);
+      if (duplicate) throw new ServiceError(409, "This UTR is already recorded on this order.");
+    }
+    const paidSoFar = existing.reduce((sum, row) => sum + row.amountInr, 0);
+    const balance = money(Math.max(0, order.totalInr - paidSoFar));
+    if (options?.capToBalance && amountInr > balance) {
+      throw new ServiceError(422, "Amount cannot be more than the balance.");
+    }
     const [row] = await tx
       .insert(payments)
       .values({
         id: paymentId,
         orderId,
-        amountInr: money(input.amountInr),
+        amountInr,
         kind: input.kind,
         method: input.method ?? null,
-        reference: input.reference ?? null,
+        reference,
         recordedBy
       })
       .returning();
     created = row;
-    const existing = await tx.select({ amountInr: payments.amountInr }).from(payments).where(eq(payments.orderId, orderId));
-    const paid = existing.reduce((sum, row) => sum + row.amountInr, 0);
+    const paid = paidSoFar + amountInr;
     if (order.status === "awaiting_payment" && meetsAdvanceGate(paid, order.totalInr)) {
       await tx.update(orders).set({ status: "paid", updatedAt: new Date() }).where(eq(orders.id, orderId));
     }

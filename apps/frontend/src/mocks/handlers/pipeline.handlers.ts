@@ -31,6 +31,90 @@ const surveys: SurveyItem[] = [];
 const quotes: QuoteItem[] = [];
 const otpByPhone = new Map<string, string>();
 
+type MockCustomerOrder = {
+  id: string;
+  customerId: string;
+  status: string;
+  systemKw: number;
+  systemKind: string;
+  siteAddress: string;
+  totalInr: number;
+  paidInr: number;
+  balanceInr: number;
+  payments: { id: string; amountInr: number; kind: string; method: string | null; paidAt: string; reference: string | null }[];
+  dispatches: { id: string; status: string; dispatchedAt: string | null; deliveredAt: string | null; vehicleNotes: string | null }[];
+  serials: {
+    id: string;
+    serialNumber: string;
+    productName: string;
+    status: string;
+    deliveredAt: string | null;
+    warrantyEndsAt: string | null;
+    underWarranty: boolean | null;
+  }[];
+};
+
+const customerOrders: MockCustomerOrder[] = [
+  {
+    id: "ord-01",
+    customerId: "cus-01",
+    status: "completed",
+    systemKw: 3,
+    systemKind: "on_grid",
+    siteAddress: "12 Model Town, Jalandhar",
+    totalInr: 185000,
+    paidInr: 185000,
+    balanceInr: 0,
+    payments: [
+      {
+        id: "pay-01",
+        amountInr: 92500,
+        kind: "advance",
+        method: "upi",
+        paidAt: "2026-03-01T00:00:00.000Z",
+        reference: "UTR-DEMO-001"
+      }
+    ],
+    dispatches: [
+      {
+        id: "dsp-01",
+        status: "delivered",
+        dispatchedAt: null,
+        deliveredAt: "2026-03-08T04:30:00.000Z",
+        vehicleNotes: "Tata Ace"
+      }
+    ],
+    serials: [
+      {
+        id: "ser-inv-01",
+        serialNumber: "INV-3K-88421",
+        productName: "3kW On-Grid Inverter",
+        status: "installed",
+        deliveredAt: "2026-03-08T04:30:00.000Z",
+        warrantyEndsAt: "2028-03-08T04:30:00.000Z",
+        underWarranty: true
+      }
+    ]
+  }
+];
+
+function orderFromAcceptedQuote(quote: QuoteItem, enquiry: EnquiryItem): MockCustomerOrder {
+  return {
+    id: `ord-mock-${quote.id}`,
+    customerId: quote.customerId,
+    status: "awaiting_payment",
+    systemKw: enquiry.requestedKw,
+    systemKind: enquiry.systemKind ?? "on_grid",
+    siteAddress: [enquiry.addressLine, enquiry.city].filter(Boolean).join(", "),
+    totalInr: quote.totalInr,
+    paidInr: 0,
+    balanceInr: quote.totalInr,
+    payments: [],
+    dispatches: [],
+    serials: []
+  };
+}
+
 function unauthorized() {
   return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
 }
@@ -95,6 +179,20 @@ export const pipelineHandlers = [
     const enquiry = enquiries.find((item) => item.id === params.id);
     if (!enquiry) return HttpResponse.json({ success: false, message: "Enquiry not found." }, { status: 404 });
     const body = (await request.json()) as { scheduledAt?: string; technicianId?: string };
+    if (body.scheduledAt) {
+      const day = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+      if (day.format(new Date(body.scheduledAt)) < day.format(new Date())) {
+        return HttpResponse.json(
+          { success: false, message: "Survey can only be scheduled from today onwards." },
+          { status: 400 }
+        );
+      }
+    }
     const survey: SurveyItem = {
       id: `sur-${Date.now().toString(36)}`,
       enquiryId: enquiry.id,
@@ -211,9 +309,24 @@ export const pipelineHandlers = [
     if (denied) return denied;
     const quote = quotes.find((item) => item.id === params.id);
     if (!quote) return HttpResponse.json({ success: false, message: "Quote not found." }, { status: 404 });
+    if (
+      enquiries.find((item) => item.id === quote.enquiryId)?.status === "won" ||
+      quotes.some((q) => q.enquiryId === quote.enquiryId && q.status === "accepted") ||
+      customerOrders.some((row) => row.id === `ord-mock-${quote.id}`)
+    ) {
+      return HttpResponse.json({ success: false, message: "This enquiry already has an order." }, { status: 409 });
+    }
     quote.status = "accepted";
     const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
-    if (enquiry) enquiry.status = "won";
+    if (enquiry) {
+      enquiry.status = "won";
+      customerOrders.unshift(orderFromAcceptedQuote(quote, enquiry));
+    }
+    for (const other of quotes) {
+      if (other.enquiryId === quote.enquiryId && other.id !== quote.id && (other.status === "draft" || other.status === "sent")) {
+        other.status = "rejected";
+      }
+    }
     return HttpResponse.json({ success: true, data: quote, message: "Quote accepted." });
   }),
 
@@ -238,27 +351,11 @@ export const pipelineHandlers = [
     if (!token.startsWith("Bearer customer.")) {
       return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
     }
-    if (!token.endsWith("cus-01")) {
-      return HttpResponse.json({ success: true, data: [] });
-    }
-    return HttpResponse.json({
-      success: true,
-      data: [
-        {
-          id: "ord-01",
-          status: "completed",
-          systemKw: 3,
-          systemKind: "on_grid",
-          siteAddress: "12 Model Town, Jalandhar",
-          totalInr: 185000,
-          paidInr: 185000,
-          balanceInr: 0,
-          payments: [{ id: "pay-01", amountInr: 92500, kind: "advance", method: "upi", paidAt: "2026-03-01T00:00:00.000Z", reference: "UTR-DEMO-001" }],
-          dispatches: [{ id: "dsp-01", status: "delivered", dispatchedAt: null, deliveredAt: "2026-03-08T04:30:00.000Z", vehicleNotes: "Tata Ace" }],
-          serials: [{ id: "ser-inv-01", serialNumber: "INV-3K-88421", productName: "3kW On-Grid Inverter", status: "installed", deliveredAt: "2026-03-08T04:30:00.000Z", warrantyEndsAt: "2028-03-08T04:30:00.000Z", underWarranty: true }]
-        }
-      ]
-    });
+    const customerId = token.replace(/^Bearer customer\./, "");
+    const data = customerOrders
+      .filter((row) => row.customerId === customerId)
+      .map(({ customerId: _customerId, ...rest }) => rest);
+    return HttpResponse.json({ success: true, data });
   }),
 
   http.post("/api/customer-auth/otp", async ({ request }) => {
@@ -304,9 +401,15 @@ export const pipelineHandlers = [
       return HttpResponse.json({ success: false, message: "This quote is not yours." }, { status: 403 });
     }
     if (quote.status !== "sent") return HttpResponse.json({ success: false, message: "This quote is already decided." }, { status: 400 });
+    if (customerOrders.some((row) => row.id === `ord-mock-${quote.id}`)) {
+      return HttpResponse.json({ success: false, message: "This enquiry already has an order." }, { status: 409 });
+    }
     quote.status = "accepted";
     const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
-    if (enquiry) enquiry.status = "won";
+    if (enquiry) {
+      enquiry.status = "won";
+      customerOrders.unshift(orderFromAcceptedQuote(quote, enquiry));
+    }
     return HttpResponse.json({ success: true, data: quote, message: "Quote accepted." });
   }),
 

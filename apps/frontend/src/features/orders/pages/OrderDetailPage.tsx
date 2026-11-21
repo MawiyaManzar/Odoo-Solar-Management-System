@@ -14,7 +14,7 @@ import { cancelOrder, getOrder, listTechnicians, scheduleOrder } from "../orders
 import { formatInr, formatWhen, labelStatus, orderStatusVariant } from "../status";
 import type { OrderDetail, TechnicianOption } from "../types";
 
-const CANCEL_LOCKED = new Set(["dispatched", "installing", "completed", "cancelled"]);
+const CANCEL_LOCKED = new Set(["packing", "dispatched", "installing", "completed", "cancelled"]);
 
 function toLocalInput(value: string | null): string {
   if (!value) return "";
@@ -62,9 +62,29 @@ export const OrderDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
+  const installMinLocal = (() => {
+    const now = new Date();
+    const pad = (part: number) => String(part).padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T00:00`;
+  })();
+
+  const scheduleBlocked = order?.status === "awaiting_payment" || order?.status === "cancelled";
+
   const saveSchedule = () => {
     if (!when || !techId) {
       setFormError("Choose an install time and a technician.");
+      return;
+    }
+    if (when < installMinLocal) {
+      setFormError("Installation can only be scheduled from today onwards.");
+      return;
+    }
+    if (scheduleBlocked) {
+      setFormError(
+        order?.status === "cancelled"
+          ? "Cancelled orders cannot be scheduled."
+          : "Record at least 30% before scheduling installation."
+      );
       return;
     }
     setSaving(true);
@@ -132,18 +152,26 @@ export const OrderDetailPage: React.FC = () => {
           )}
           <section style={{ display: "grid", gap: "12px", maxWidth: "480px" }}>
             <h2 style={{ margin: 0, fontSize: "1.05rem" }}>Schedule</h2>
-            <Input label="Install datetime" type="datetime-local" value={when} onChange={(event) => setWhen(event.target.value)} disabled={!canWrite} />
+            <Input
+              label="Install datetime"
+              type="datetime-local"
+              min={installMinLocal}
+              value={when}
+              onChange={(event) => setWhen(event.target.value)}
+              disabled={!canWrite || scheduleBlocked}
+              helperText={scheduleBlocked ? "Available after 30% payment" : "Today or a future date"}
+            />
             <Select
               label="Lead technician"
               value={techId}
               options={techs.map((tech) => ({ value: tech.id, label: tech.name }))}
               onChange={(event) => setTechId(event.target.value)}
-              disabled={!canWrite || techs.length === 0}
+              disabled={!canWrite || techs.length === 0 || scheduleBlocked}
             />
             {formError && <p style={{ color: "var(--danger-text)", margin: 0 }}>{formError}</p>}
             {canWrite && (
               <div style={{ display: "flex", gap: "8px" }}>
-                <Button variant="primary" onClick={saveSchedule} isLoading={saving}>
+                <Button variant="primary" onClick={saveSchedule} isLoading={saving} disabled={scheduleBlocked || !when || !techId}>
                   Save schedule
                 </Button>
                 {!CANCEL_LOCKED.has(order.status) && (

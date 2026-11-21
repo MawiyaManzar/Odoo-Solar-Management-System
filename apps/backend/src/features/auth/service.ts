@@ -59,6 +59,9 @@ export async function login(input: LoginInput): Promise<AuthUser> {
   if (!row || !matches) {
     throw new ServiceError(401, "Email or password is incorrect.");
   }
+  if (!row.isActive) {
+    throw new ServiceError(403, "This account is inactive. Ask a director to restore access.");
+  }
 
   return toAuthUser(row);
 }

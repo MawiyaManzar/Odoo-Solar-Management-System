@@ -109,6 +109,22 @@ async function runTests() {
   });
   assert(bad.statusCode === 400, "negative amount is 400", state);
 
+  const missingUtr = await app.inject({
+    method: "POST",
+    url: `/api/orders/${orderId}/payments`,
+    headers: auth(sales),
+    payload: { amountInr: 10, kind: "balance", method: "upi" }
+  });
+  assert(missingUtr.statusCode === 400, "UPI without UTR is 400", state);
+
+  const overpayStaff = await app.inject({
+    method: "POST",
+    url: `/api/orders/${orderId}/payments`,
+    headers: auth(sales),
+    payload: { amountInr: 200000, kind: "balance", method: "cash", reference: "CASH-OVER" }
+  });
+  assert(overpayStaff.statusCode === 201, "sales may record above balance", state);
+
   console.log("\nUS-5: schedule after the gate");
   const tooSoonId = await seedAwaitingOrder(`${suffix}b`, 80000);
   const blocked = await app.inject({
@@ -118,6 +134,13 @@ async function runTests() {
     payload: { scheduledInstallAt: "2026-12-02T09:30:00.000Z", leadTechnicianId: "usr-tech-01" }
   });
   assert(blocked.statusCode === 422, "schedule before 30 percent is 422", state);
+  const pastInstall = await app.inject({
+    method: "POST",
+    url: `/api/orders/${orderId}/schedule`,
+    headers: auth(sales),
+    payload: { scheduledInstallAt: "2020-01-01T09:30:00.000Z", leadTechnicianId: "usr-tech-01" }
+  });
+  assert(pastInstall.statusCode === 400, "past install schedule is 400", state);
   const scheduled = await app.inject({
     method: "POST",
     url: `/api/orders/${orderId}/schedule`,
@@ -126,6 +149,14 @@ async function runTests() {
   });
   assert(scheduled.statusCode === 200 && scheduled.json().data.leadTechnicianId === "usr-tech-01", "lead technician is saved", state);
   assert(Boolean(scheduled.json().data.installationId), "installation row exists", state);
+
+  const dupUtr = await app.inject({
+    method: "POST",
+    url: `/api/orders/${orderId}/payments`,
+    headers: auth(sales),
+    payload: { amountInr: 10, kind: "balance", method: "upi", reference: `UTR-${suffix}` }
+  });
+  assert(dupUtr.statusCode === 409, "duplicate UTR on the same order is 409", state);
 
   const techs = await app.inject({ method: "GET", url: "/api/staff?role=technician", headers: auth(sales) });
   assert(techs.json().data.some((row) => row.id === "usr-tech-01"), "technician list includes Harpreet", state);

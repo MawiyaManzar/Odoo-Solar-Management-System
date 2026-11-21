@@ -39,7 +39,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
     fullName: "",
     email: "",
     companyName: "",
-    role: APP_CONFIG.defaultRoles[0]?.value || "admin",
+    role: APP_CONFIG.signupRoles[0]?.value || "sales",
     password: "",
     confirmPassword: "",
     agreeToTerms: false
@@ -158,7 +158,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
           value={formData.role}
           onChange={(event) => setFormData({ ...formData, role: event.target.value })}
           disabled={isLoading}
-          options={APP_CONFIG.defaultRoles}
+          options={APP_CONFIG.signupRoles}
         />
       </div>
 
