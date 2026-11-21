@@ -7,7 +7,7 @@ export const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   return (
     <AuthLayout width="wide" headerLink={{ to: "/login", label: "Sign in", prefix: "Have an account?" }}>
-      <SignupForm onSuccess={() => navigate("/app/records")} />
+      <SignupForm onSuccess={() => navigate("/app/dashboard")} />
     </AuthLayout>
   );
 };

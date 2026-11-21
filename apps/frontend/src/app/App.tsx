@@ -43,7 +43,7 @@ const PublicOnly: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <div style={{ padding: "var(--space-8, 32px)", color: "var(--text-muted)" }}>Checking session...</div>
     );
   }
-  if (user) return <Navigate to="/app/records" replace />;
+  if (user) return <Navigate to="/app/dashboard" replace />;
   return <>{children}</>;
 };
 
@@ -79,7 +79,7 @@ export const App: React.FC = () => {
               </RequireAuth>
             }
           >
-            <Route index element={<Navigate to="records" replace />} />
+            <Route index element={<Navigate to="dashboard" replace />} />
             {featureRoutes.map((feature) => (
               <Route key={feature.id} path={feature.path} element={<FeatureGate feature={feature} />} />
             ))}

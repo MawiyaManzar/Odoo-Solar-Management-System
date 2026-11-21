@@ -121,13 +121,15 @@ Creates or updates the customer matched by phone, then inserts an enquiry with `
   requestedKw, systemKind, // on_grid | off_grid | null
   wantsSubsidy, monthlyBillInr, roofAreaSqft, gridSuitable,
   status, // new | qualifying | survey_scheduled | survey_done | quoted | won | lost
-  assignedTo, notes, createdAt, updatedAt
+  assignedTo, notes, createdAt, updatedAt,
+  customerName, customerPhone, addressLine, city
 }
 ```
 
 | Method | Path | Roles | Body / notes |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/enquiries` | any auth | Query: `?status=&assignedTo=` |
+| GET | `/api/staff` | any auth | `{ id, name, email, role }[]` · query `?role=` · used to assign a technician |
+| GET | `/api/enquiries` | any auth | Query: `?status=&assignedTo=` · includes customer name, phone, address |
 | POST | `/api/enquiries` | sales, admin | `{ customerId, source, requestedKw, systemKind?, wantsSubsidy?, notes? }` · status starts `new` |
 | GET | `/api/enquiries/:id` | any auth | |
 | PATCH | `/api/enquiries/:id` | sales, admin | qualification fields + status transitions |

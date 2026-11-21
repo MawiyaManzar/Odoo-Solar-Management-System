@@ -22,6 +22,10 @@
 | Public enquiry | `POST /api/public/enquiries` | `POST /api/public/enquiries` | `REAL API IMPLEMENTED` | Upserts customer by phone, `source: web_form` |
 | Products | `GET/POST /api/products`, `PATCH /api/products/:id` | same | `REAL API IMPLEMENTED` | Write: admin |
 | Packages | `GET/POST /api/packages`, `GET/PATCH /api/packages/:id` | same | `REAL API IMPLEMENTED` | Write: admin |
+| Staff list | `GET /api/staff` | `GET /api/staff` | `REAL API IMPLEMENTED` | Active users, optional `role` |
+| Enquiries | `GET/PATCH /api/enquiries` | same | `REAL API IMPLEMENTED` | Write: sales, admin |
+| Surveys | `GET/POST /api/enquiries/:id/surveys`, `PATCH /api/surveys/:id` | same | `REAL API IMPLEMENTED` | Schedule: sales, technician, admin. Result: technician, admin |
+| Quotes | `GET/POST /api/quotes`, `POST /api/quotes/:id/send|accept|reject` | same | `REAL API IMPLEMENTED` | Write: sales, admin. Accept creates an order |
 
 ## When a real endpoint is done
 

@@ -2,7 +2,9 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import { authRoutes } from "./features/auth/routes.js";
 import { catalogRoutes } from "./features/catalog/routes.js";
+import { enquiryRoutes } from "./features/enquiries/routes.js";
 import { healthRoutes } from "./features/health/routes.js";
+import { quoteRoutes } from "./features/quotes/routes.js";
 import { recordsRoutes } from "./features/records/routes.js";
 import { registerAuth } from "./plugins/auth.js";
 import { registerDb } from "./plugins/db.js";
@@ -19,6 +21,8 @@ export async function buildApp(options?: { logger?: boolean }): Promise<FastifyI
   await app.register(healthRoutes);
   await app.register(authRoutes);
   await app.register(catalogRoutes);
+  await app.register(enquiryRoutes);
+  await app.register(quoteRoutes);
   await app.register(recordsRoutes);
 
   return app;

@@ -24,7 +24,7 @@ export const LoginPage: React.FC = () => {
       setError(message);
       return;
     }
-    navigate("/app/records");
+    navigate("/app/dashboard");
   };
 
   return (
