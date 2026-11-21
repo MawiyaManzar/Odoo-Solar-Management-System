@@ -36,6 +36,8 @@
 | Stock | `GET /api/stock`, `PATCH /api/stock/:productId` | same | `REAL API VERIFIED` | Write: warehouse, admin |
 | Serials | `GET/POST /api/serial-units`, `POST .../scan-out` | same | `REAL API VERIFIED` | Scan-out links a unit to a dispatch |
 | Dispatches | `GET/POST /api/dispatches`, `POST .../in-transit`, `POST .../deliver` | same | `REAL API VERIFIED` | Deliver sets `deliveredAt` and moves the order to dispatched |
+| Job margins | `GET /api/reports/job-margins` | same | `REAL API VERIFIED` | Admin only. Includes customerName and completedAt |
+| Service tickets list | `GET /api/service-tickets` | same | `REAL API VERIFIED` | List/counts only; create/detail UI deferred |
 
 ## When a real endpoint is done
 

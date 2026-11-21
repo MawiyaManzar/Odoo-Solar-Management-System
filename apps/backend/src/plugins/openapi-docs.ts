@@ -49,6 +49,7 @@ function tagForPath(path: string): string {
   }
   if (path.startsWith("/api/installations")) return "Installations";
   if (path.startsWith("/api/service-tickets")) return "Service tickets";
+  if (path.startsWith("/api/reports")) return "Reports";
   if (path.startsWith("/api/records")) return "Records";
   return "Other";
 }

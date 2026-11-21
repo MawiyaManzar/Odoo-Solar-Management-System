@@ -328,7 +328,7 @@ billableInr = underWarranty ? 0 : <parts+labour estimate or manual>
 
 | Method | Path | Roles | Response `data` |
 | :--- | :--- | :--- | :--- |
-| GET | `/api/reports/job-margins` | admin | `JobMarginResult[]` — `{ orderId, revenueInr, cogsEstimateInr, grossMarginInr, status }` |
+| GET | `/api/reports/job-margins` | admin | `JobMarginResult[]` — `{ orderId, customerName, revenueInr, cogsEstimateInr, grossMarginInr, status, completedAt }` · cost = sum(quote line qty × product unit cost); `completedAt` from installation finish or order `updatedAt` when completed |
 
 ---
 

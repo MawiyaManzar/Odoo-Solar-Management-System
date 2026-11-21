@@ -343,10 +343,13 @@ export type TechnicianAssignmentResult = z.infer<typeof technicianAssignmentResu
 /** Director dashboard aggregate (computed, not a table). */
 export const jobMarginResultSchema = z.object({
   orderId: z.string(),
+  customerName: z.string(),
   revenueInr: z.number(),
   cogsEstimateInr: z.number(),
   grossMarginInr: z.number(),
-  status: z.enum(ORDER_STATUSES)
+  status: z.enum(ORDER_STATUSES),
+  /** Installation finish time, or order updatedAt when status is completed. */
+  completedAt: isoDateTime.nullable()
 });
 export type JobMarginResult = z.infer<typeof jobMarginResultSchema>;
 

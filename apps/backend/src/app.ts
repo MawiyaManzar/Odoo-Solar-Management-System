@@ -9,6 +9,8 @@ import { inventoryRoutes } from "./features/inventory/routes.js";
 import { ordersRoutes } from "./features/orders/routes.js";
 import { quoteRoutes } from "./features/quotes/routes.js";
 import { recordsRoutes } from "./features/records/routes.js";
+import { reportsRoutes } from "./features/reports/routes.js";
+import { serviceTicketsRoutes } from "./features/service-tickets/routes.js";
 import { registerAuth } from "./plugins/auth.js";
 import { registerDb } from "./plugins/db.js";
 import { registerErrorHandler } from "./plugins/errors.js";
@@ -33,6 +35,8 @@ export async function buildApp(options?: { logger?: boolean }): Promise<FastifyI
   await app.register(ordersRoutes);
   await app.register(inventoryRoutes);
   await app.register(recordsRoutes);
+  await app.register(serviceTicketsRoutes);
+  await app.register(reportsRoutes);
 
   return app;
 }
