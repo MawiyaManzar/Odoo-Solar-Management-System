@@ -28,6 +28,8 @@
 | Quotes | `GET/POST /api/quotes`, `POST /api/quotes/:id/send|accept|reject` | same | `REAL API VERIFIED` | Write: sales, admin. Accept creates an order. Send adds `customerPath` |
 | Customer OTP | `POST /api/customer-auth/otp`, `POST /api/customer-auth/verify` | same | `REAL API VERIFIED` | Dev responses include `devCode` outside production |
 | Customer quote | `GET /api/customer/quotes/:id`, `POST .../accept`, `POST .../reject` | same | `REAL API VERIFIED` | Owner only. A customer token on staff routes returns 403 |
+| Customer sign-in | `POST /api/customer-auth/sign-in/otp`, `POST .../verify` | same | `REAL API VERIFIED` | Unknown phone is told to submit an inquiry |
+| Customer orders | `GET /api/customer/orders` | same | `REAL API VERIFIED` | Read-only payments, dispatch, serials, warranty |
 
 ## When a real endpoint is done
 

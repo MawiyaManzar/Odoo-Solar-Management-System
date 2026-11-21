@@ -18,6 +18,40 @@ function customerAuth(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export function requestSignInOtp(phone: string) {
+  return apiClient.post<{ success: boolean; devCode?: string; message?: string }>("/customer-auth/sign-in/otp", { phone });
+}
+
+export function verifySignInOtp(phone: string, code: string) {
+  return apiClient.post<ApiResponse<{ token: string; customerId: string }>>("/customer-auth/sign-in/verify", { phone, code });
+}
+
+export interface CustomerOrder {
+  id: string;
+  status: string;
+  systemKw: number;
+  systemKind: string;
+  siteAddress: string;
+  totalInr: number;
+  paidInr: number;
+  balanceInr: number;
+  payments: { id: string; amountInr: number; kind: string; method: string | null; paidAt: string; reference: string | null }[];
+  dispatches: { id: string; status: string; dispatchedAt: string | null; deliveredAt: string | null; vehicleNotes: string | null }[];
+  serials: {
+    id: string;
+    serialNumber: string;
+    productName: string;
+    status: string;
+    deliveredAt: string | null;
+    warrantyEndsAt: string | null;
+    underWarranty: boolean | null;
+  }[];
+}
+
+export function listCustomerOrders() {
+  return apiClient.get<ApiResponse<CustomerOrder[]>>("/customer/orders", { headers: customerAuth() });
+}
+
 export function requestCustomerOtp(phone: string, quoteId: string) {
   return apiClient.post<{ success: boolean; devCode?: string; message?: string }>("/customer-auth/otp", { phone, quoteId });
 }

@@ -80,6 +80,9 @@ Full request/response detail: [API.md](API.md).
 | POST | `/api/quotes/:id/send` | sales, admin | quotes |
 | POST | `/api/quotes/:id/accept` | sales, admin | quotes |
 | POST | `/api/quotes/:id/reject` | sales, admin | quotes |
+| POST | `/api/customer-auth/sign-in/otp` | public | customer portal |
+| POST | `/api/customer-auth/sign-in/verify` | public | customer portal |
+| GET | `/api/customer/orders` | customer (own rows) | customer portal |
 | POST | `/api/customer-auth/otp` | public | customer OTP |
 | POST | `/api/customer-auth/verify` | public | customer OTP |
 | GET | `/api/customer/quotes/:id` | customer (own quote) | customer OTP |

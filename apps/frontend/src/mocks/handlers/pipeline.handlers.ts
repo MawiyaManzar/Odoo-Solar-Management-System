@@ -217,6 +217,50 @@ export const pipelineHandlers = [
     return HttpResponse.json({ success: true, data: quote, message: "Quote accepted." });
   }),
 
+  http.post("/api/customer-auth/sign-in/otp", async ({ request }) => {
+    const body = (await request.json()) as { phone: string };
+    if (body.phone !== "9876543210") {
+      return HttpResponse.json({ success: false, message: "Submit an inquiry before signing in." }, { status: 400 });
+    }
+    return HttpResponse.json({ success: true, devCode: "123456", message: "Code sent." });
+  }),
+
+  http.post("/api/customer-auth/sign-in/verify", async ({ request }) => {
+    const body = (await request.json()) as { phone: string; code: string };
+    if (body.phone !== "9876543210" || body.code !== "123456") {
+      return HttpResponse.json({ success: false, message: "That code is not correct." }, { status: 400 });
+    }
+    return HttpResponse.json({ success: true, data: { token: "customer.cus-01", customerId: "cus-01" } });
+  }),
+
+  http.get("/api/customer/orders", ({ request }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    if (!token.endsWith("cus-01")) {
+      return HttpResponse.json({ success: true, data: [] });
+    }
+    return HttpResponse.json({
+      success: true,
+      data: [
+        {
+          id: "ord-01",
+          status: "completed",
+          systemKw: 3,
+          systemKind: "on_grid",
+          siteAddress: "12 Model Town, Jalandhar",
+          totalInr: 185000,
+          paidInr: 185000,
+          balanceInr: 0,
+          payments: [{ id: "pay-01", amountInr: 92500, kind: "advance", method: "upi", paidAt: "2026-03-01T00:00:00.000Z", reference: "UTR-DEMO-001" }],
+          dispatches: [{ id: "dsp-01", status: "delivered", dispatchedAt: null, deliveredAt: "2026-03-08T04:30:00.000Z", vehicleNotes: "Tata Ace" }],
+          serials: [{ id: "ser-inv-01", serialNumber: "INV-3K-88421", productName: "3kW On-Grid Inverter", status: "installed", deliveredAt: "2026-03-08T04:30:00.000Z", warrantyEndsAt: "2028-03-08T04:30:00.000Z", underWarranty: true }]
+        }
+      ]
+    });
+  }),
+
   http.post("/api/customer-auth/otp", async ({ request }) => {
     const body = (await request.json()) as { phone: string; quoteId: string };
     const quote = quotes.find((item) => item.id === body.quoteId);

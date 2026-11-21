@@ -212,7 +212,15 @@ Homeowners are not staff users. A `customer_accounts` row is created on the firs
 | POST | `/api/customer/quotes/:id/accept` | that customer | `sent` only · same order + `won` effect as staff accept |
 | POST | `/api/customer/quotes/:id/reject` | that customer | `sent` only · enquiry → `lost` |
 
-When `NODE_ENV` is not `production`, the OTP response includes `devCode` and the server logs the code. Production omits `devCode`. Wrong phone: `400` “Use the mobile number from your inquiry.”
+When `NODE_ENV` is not `production`, the OTP response includes `devCode` and the server logs the code. Production omits `devCode`. Wrong phone on a quote: `400` “Use the mobile number from your inquiry.”
+
+Sign-in without a quote (returning customer):
+
+| Method | Path | Who | Body / notes |
+| :--- | :--- | :--- | :--- |
+| POST | `/api/customer-auth/sign-in/otp` | public | `{ phone }` · 400 `Submit an inquiry before signing in.` if the phone is not a customer |
+| POST | `/api/customer-auth/sign-in/verify` | public | `{ phone, code }` → `{ token, customerId }` |
+| GET | `/api/customer/orders` | that customer | Own orders with `payments`, `dispatches`, and `serials` (`warrantyEndsAt`, `underWarranty`). Staff token → 403 |
 
 ---
 

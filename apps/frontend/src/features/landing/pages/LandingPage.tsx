@@ -50,7 +50,7 @@ export const LandingPage: React.FC = () => {
       >
         <BrandMark />
         <Link to="/login" style={{ fontWeight: 600 }}>
-          Staff sign in
+          Sign in
         </Link>
       </header>
 

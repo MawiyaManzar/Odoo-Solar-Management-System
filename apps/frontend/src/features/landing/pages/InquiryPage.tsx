@@ -91,7 +91,7 @@ export const InquiryPage: React.FC = () => {
           <BrandMark />
         </Link>
         <Link to="/login" style={{ fontWeight: 600 }}>
-          Staff sign in
+          Sign in
         </Link>
       </header>
       <main style={{ width: "min(640px, 100%)", margin: "0 auto", padding: "var(--space-6, 24px) var(--layout-gutter) var(--space-8, 32px)" }}>

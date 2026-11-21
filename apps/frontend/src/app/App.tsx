@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { SignupPage } from "../features/auth/pages/SignupPage";
+import { CustomerJobsPage } from "../features/customer-portal/pages/CustomerJobsPage";
 import { CustomerQuotePage } from "../features/customer-quotes/pages/CustomerQuotePage";
 import { InquiryPage } from "../features/landing/pages/InquiryPage";
 import { LandingPage } from "../features/landing/pages/LandingPage";
@@ -57,6 +58,7 @@ export const App: React.FC = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/inquire" element={<InquiryPage />} />
           <Route path="/my/quotes/:quoteId" element={<CustomerQuotePage />} />
+          <Route path="/my/jobs" element={<CustomerJobsPage />} />
           <Route
             path="/login"
             element={
