@@ -81,16 +81,12 @@ export const LandingPage: React.FC = () => {
         style={{
           position: "relative",
           isolation: "isolate",
-          minHeight: "min(72vh, 640px)",
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.2fr) minmax(260px, 0.8fr)",
-          gap: "var(--space-8, 32px)",
-          alignItems: "center",
-          padding: "var(--space-8, 32px) var(--layout-gutter)",
+          minHeight: "min(82vh, 760px)",
+          padding: "clamp(20px, 3vw, 36px) var(--layout-gutter) var(--space-12, 48px)",
           borderBottom: "var(--border-default)",
           backgroundImage: "url(/landing/hero-bg.jpg)",
           backgroundSize: "cover",
-          backgroundPosition: "center"
+          backgroundPosition: "82% 12%"
         }}
       >
         <div
@@ -99,27 +95,34 @@ export const LandingPage: React.FC = () => {
             position: "absolute",
             inset: 0,
             backgroundColor: "var(--text)",
-            opacity: 0.42,
+            opacity: 0.28,
             zIndex: 0
           }}
         />
-        <div style={{ position: "relative", zIndex: 1, maxWidth: "38rem" }}>
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            maxWidth: "36rem"
+          }}
+        >
           <h1
             style={{
               margin: 0,
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(40px, 6.5vw, 64px)",
-              fontWeight: 800,
+              fontFamily: "var(--font-hero)",
+              fontSize: "clamp(34px, 5vw, 52px)",
+              fontWeight: 700,
               fontStyle: "italic",
-              lineHeight: 1.08,
+              lineHeight: 1.05,
               letterSpacing: "-0.02em",
               color: "var(--white)"
             }}
           >
-            Go Solar at{" "}
+            <span style={{ display: "block" }}>Go Solar at</span>
             <span
               style={{
                 display: "inline-block",
+                marginTop: "6px",
                 backgroundColor: "var(--amber-2)",
                 color: "var(--text)",
                 padding: "2px 12px 0",
@@ -131,11 +134,11 @@ export const LandingPage: React.FC = () => {
           </h1>
           <p
             style={{
-              margin: "16px 0 0",
-              maxWidth: "32rem",
-              fontSize: "var(--text-lg, 18px)",
-              color: "var(--white)",
-              opacity: 0.92
+              margin: "12px 0 0",
+              maxWidth: "28rem",
+              fontSize: "var(--text-base, 15px)",
+              lineHeight: 1.45,
+              color: "var(--white)"
             }}
           >
             Save up to 90% on electricity bills with government subsidy and easy EMIs. Tell us about your roof and we
@@ -144,22 +147,27 @@ export const LandingPage: React.FC = () => {
         </div>
 
         <aside
+          className="landing-hero-cta-card"
           style={{
-            position: "relative",
+            position: "absolute",
             zIndex: 1,
-            justifySelf: "end",
-            width: "min(100%, 340px)",
+            top: "75%",
+            right: "clamp(48px, 10vw, 120px)",
+            transform: "translateY(-50%)",
+            width: "min(100% - 32px, 510px)",
             backgroundColor: "var(--card)",
             border: "var(--border-default)",
             borderRadius: "var(--radius-card)",
-            padding: "24px 20px",
+            padding: "36px 30px",
             display: "flex",
             flexDirection: "column",
-            gap: "12px"
+            gap: "18px"
           }}
         >
-          <h2 style={{ margin: 0, fontSize: "var(--text-lg, 18px)", color: "var(--text)" }}>Book a consultation</h2>
-          <p style={{ margin: 0, fontSize: "var(--text-sm, 13px)", color: "var(--text-muted)" }}>
+          <h2 style={{ margin: 0, fontSize: "var(--text-xl, 22px)", fontWeight: 650, color: "var(--text)" }}>
+            Book a consultation
+          </h2>
+          <p style={{ margin: 0, fontSize: "var(--text-base, 15px)", lineHeight: 1.5, color: "var(--text-muted)" }}>
             Answer a few roof questions. Sales calls you back, then a technician visits.
           </p>
           <Link to="/inquire" style={{ textDecoration: "none", display: "block" }}>
@@ -171,7 +179,7 @@ export const LandingPage: React.FC = () => {
             href="#packages"
             style={{
               textAlign: "center",
-              fontSize: "var(--text-sm, 13px)",
+              fontSize: "var(--text-base, 15px)",
               fontWeight: 600,
               color: "var(--accent-text)",
               textDecoration: "none"
@@ -185,15 +193,24 @@ export const LandingPage: React.FC = () => {
       <style>{`
         .landing-hero-cta {
           width: 100%;
+          min-height: 54px;
+          font-size: 17px;
+          font-weight: 700;
+          padding: 16px 24px;
         }
-        @media (max-width: 800px) {
+        @media (max-width: 900px) {
           .landing-hero {
-            grid-template-columns: 1fr !important;
             min-height: auto !important;
+            background-position: 70% 20% !important;
+            padding-bottom: 24px !important;
           }
-          .landing-hero aside {
-            justify-self: stretch !important;
+          .landing-hero-cta-card {
+            position: relative !important;
+            top: auto !important;
+            right: auto !important;
+            transform: none !important;
             width: 100% !important;
+            margin-top: 24px;
           }
         }
       `}</style>
@@ -202,15 +219,7 @@ export const LandingPage: React.FC = () => {
         id="packages"
         style={{ padding: "var(--space-8, 32px) var(--layout-gutter) var(--space-12, 48px)" }}
       >
-        <h2
-          style={{
-            margin: "0 0 4px",
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(24px, 3vw, 32px)",
-            fontWeight: 800,
-            color: "var(--text)"
-          }}
-        >
+        <h2 style={{ margin: "0 0 4px", fontSize: "var(--text-xl, 22px)", fontWeight: 650, color: "var(--text)" }}>
           Packages
         </h2>
         <p style={{ margin: "0 0 20px", color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>

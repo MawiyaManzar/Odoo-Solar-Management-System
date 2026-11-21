@@ -7,7 +7,7 @@ Owner: Charity | Branch: feat/revamp-landing-page | Status: verified
 ### User stories
 | ID | Role | Story | Acceptance |
 | :--- | :--- | :--- | :--- |
-| US-1 | visitor (public) | See a professional marketing landing for SunPower | Given `/`, when the page loads, then brand, Montserrat ExtraBold hero title “Go Solar at Zero Investment”, hero photo, and packages are visible. |
+| US-1 | visitor (public) | See a professional marketing landing for SunPower | Given `/`, when the page loads, then brand, Montserrat Bold hero title “Go Solar at Zero Investment”, hero photo, and packages are visible. |
 | US-2 | visitor (public) | Browse active packages | Given active packages in the catalog, when the landing loads, then each package shows code, name, kind, capacity, and base price in INR from `GET /api/public/packages`. |
 | US-3 | visitor (public) | Complete a phased site questionnaire and contact step | Given the wizard, when they answer each phase and submit contact details, then `POST /api/public/enquiries` creates the enquiry and they see a success reference. |
 
@@ -36,7 +36,7 @@ Phase answers with **no column** (roof ownership, roof type, power cuts, timelin
 ### Screens
 
 **P1 Landing (`/`)**  
-Purpose: marketing entry + packages. Hero with Montserrat ExtraBold title and photo. CTA → `/inquire`.  
+Purpose: marketing entry + packages. Hero with Montserrat Bold title and photo. CTA → `/inquire`.  
 States for packages: skeleton (`landing-skeleton`), empty (`landing-empty`), error + Retry.
 
 **P2 Phased inquiry (`/inquire`)**  
@@ -60,8 +60,8 @@ States: step validation before Next; submitting; success with enquiry id; error 
 | :--- | :--- | :--- |
 | 1 | Keep HackCore DESIGN.md (beige / plum / teal, flat, no shadows, no gradients) | Yes |
 | 2 | Wizard lives on `/inquire` (landing CTA links there); landing stays marketing + packages | A — `/inquire` wizard |
-| 3 | Hero mock from attachments in `public/` | Yes — full-bleed `public/landing/hero-bg.jpg` with Montserrat ExtraBold “Go Solar at Zero Investment” (amber highlight on Zero Investment) and Book consultation CTA |
-| 4 | Hero title font | Montserrat ExtraBold (800) via `--font-display`; no “Save money, save electricity” line |
+| 3 | Hero mock from attachments in `public/` | Yes — full-bleed `public/landing/hero-bg.jpg` with Montserrat Bold “Go Solar at Zero Investment” (amber highlight on Zero Investment) and Book consultation CTA |
+| 4 | Hero title font | Montserrat Bold (700) via `--font-hero` on the hero title only; all other UI uses Inter (`--font-sans`) per DESIGN.md |
 | 5 | No fabricated trust stats | Yes |
 | 6 | Persist phases without new columns | A — extend public API for `monthlyBillInr`, `roofAreaSqft`, `gridSuitable`; roof ownership / type / power cuts in structured `notes` |
 | 7 | Requested kW | B — dedicated kW step in the wizard |
@@ -69,7 +69,7 @@ States: step validation before Next; submitting; success with enquiry id; error 
 ## Part B: Walkthrough
 
 ### 1. Try it live
-1. Open `/`. You should see Montserrat ExtraBold “Go Solar at Zero Investment”, the hero photo, Book consultation, and at least package `OG-3KW` at ₹1,85,000 from the API.
+1. Open `/`. You should see Montserrat Bold “Go Solar at Zero Investment”, the hero photo, Book consultation, and at least package `OG-3KW` at ₹1,85,000 from the API.
 2. Click **Book a free survey**. On `/inquire`, step 1 asks roof ownership. Choose **Yes**, then **Next**.
 3. Roof type **Concrete roof** → terrace **200 – 400 sqft / Medium** → **No power cut** → bill **₹1,500 – ₹2,500** → keep **3 kW** on-grid → contact: name `Priya Sharma`, phone `9811122233`, address `12 Model Town`, city `Jalandhar`.
 4. Submit. Success shows an `enq-…` reference. Refresh `/inquire` and you start a new wizard (success state is session-only); the enquiry remains in Postgres for sales.
@@ -87,4 +87,4 @@ States: step validation before Next; submitting; success with enquiry id; error 
 ### 4. Test coverage
 - US-2, US-3: `apps/backend/tests/landing-ui.e2e.mjs`
 - Browser: landing populated, wizard through submit → `enq-15cda349` in real mode
-- US-1 visual: Montserrat ExtraBold hero title + packages confirmed in Cursor browser
+- US-1 visual: Montserrat Bold hero title + packages confirmed in Cursor browser

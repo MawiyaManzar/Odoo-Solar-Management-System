@@ -227,15 +227,7 @@ export const InquiryPage: React.FC = () => {
           padding: "var(--space-6, 24px) var(--layout-gutter) var(--space-8, 32px)"
         }}
       >
-        <h1
-          style={{
-            margin: "0 0 4px",
-            fontFamily: "var(--font-display)",
-            fontSize: "clamp(24px, 4vw, 32px)",
-            fontWeight: 800,
-            color: "var(--text)"
-          }}
-        >
+        <h1 style={{ margin: "0 0 4px", fontSize: "var(--text-xl, 22px)", fontWeight: 650, color: "var(--text)" }}>
           Free rooftop solar survey
         </h1>
         <p style={{ margin: "0 0 16px", color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
