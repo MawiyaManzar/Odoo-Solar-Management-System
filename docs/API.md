@@ -250,7 +250,7 @@ Sign-in without a quote (returning customer):
 | GET | `/api/orders/:id/payments` | any auth | |
 | POST | `/api/orders/:id/payments` | sales, admin | `{ amountInr, kind, method?, reference? }` · `kind` ∈ `advance \| balance \| full \| service` |
 
-**Rule:** when sum(payments) ≥ `orders.totalInr`, set order status `paid` (ready for warehouse).
+**Rule:** when sum(payments) ≥ 30% of `orders.totalInr`, set order status `paid` (ready for warehouse). A 50% advance also qualifies. Balance stays visible until the order is fully settled. `POST /api/orders/:id/schedule` `{ scheduledInstallAt, leadTechnicianId }` (sales, admin) sets the install time and upserts an installation once the order is `paid` or later. Lead technicians come from `GET /api/staff?role=technician`.
 
 ---
 
@@ -284,6 +284,7 @@ Support lookup example: `GET /api/serial-units?serialNumber=INV-3K-88421`.
 | GET | `/api/dispatches` | any auth | Query: `?orderId=&status=` |
 | POST | `/api/dispatches` | warehouse, admin | `{ orderId, vehicleNotes? }` · status `packing`; order → `packing` |
 | GET | `/api/dispatches/:id` | any auth | include scanned serial ids |
+| POST | `/api/dispatches/:id/in-transit` | warehouse, admin | from `packing` to `in_transit`; sets `dispatchedAt` |
 | POST | `/api/dispatches/:id/deliver` | warehouse, admin | sets `delivered` + `deliveredAt` on dispatch and linked serials; order → `dispatched` |
 
 **Phase 1 warranty clock:** `serial_units.delivered_at` + `products.default_warranty_months`.  
@@ -364,7 +365,7 @@ Do not block Phase 1 feature PRs on these routes.
 1. Sales: `POST /api/customers` → `POST /api/enquiries` for Amit Verma 3 kW subsidy.
 2. Tech: `POST /api/enquiries/:id/surveys` → `PATCH /api/surveys/:id` with `result: "approved"`.
 3. Sales: `POST /api/quotes` with `packageId: "pkg-og3"` → `POST .../send` → `POST .../accept` (creates order).
-4. Sales: `POST /api/orders/:id/payments` advance + balance → order `paid`.
+4. Sales: `POST /api/orders/:id/payments` until paid sum ≥ 30% of total → order `paid`.
 5. Warehouse: `POST /api/dispatches` → `POST /api/serial-units/:id/scan-out` → `POST .../deliver`.
 6. Tech: `POST /api/installations` → `POST .../complete`.
 7. Support (later): `GET /api/customers?phone=9876543210` → `GET /api/serial-units?orderId=` → `POST /api/service-tickets`.

@@ -1,5 +1,9 @@
 import type { ComponentType } from "react";
 import { CatalogPage } from "../features/catalog/pages/CatalogPage";
+import { DispatchDetailPage } from "../features/inventory/pages/DispatchDetailPage";
+import { WarehousePage } from "../features/inventory/pages/WarehousePage";
+import { OrderDetailPage } from "../features/orders/pages/OrderDetailPage";
+import { OrdersPage } from "../features/orders/pages/OrdersPage";
 import { PackageDetailPage } from "../features/catalog/pages/PackageDetailPage";
 import { DashboardPage } from "../features/dashboard/pages/DashboardPage";
 import { EnquiriesPage } from "../features/enquiries/pages/EnquiriesPage";
@@ -71,6 +75,36 @@ export const featureRoutes: FeatureRoute[] = [
     label: "Package",
     roles: ["admin"],
     page: PackageDetailPage,
+    showInNav: false
+  },
+  {
+    id: "orders",
+    path: "orders",
+    label: "Orders",
+    roles: staff,
+    page: OrdersPage
+  },
+  {
+    id: "order-detail",
+    path: "orders/:orderId",
+    label: "Order",
+    roles: staff,
+    page: OrderDetailPage,
+    showInNav: false
+  },
+  {
+    id: "warehouse",
+    path: "warehouse",
+    label: "Warehouse",
+    roles: ["admin", "warehouse"],
+    page: WarehousePage
+  },
+  {
+    id: "dispatch-detail",
+    path: "dispatches/:dispatchId",
+    label: "Dispatch",
+    roles: staff,
+    page: DispatchDetailPage,
     showInNav: false
   },
   {

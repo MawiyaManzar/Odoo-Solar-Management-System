@@ -17,6 +17,8 @@ pnpm dev
 
 Open http://localhost:5173. The backend listens on port 3000. Vite proxies `/api` to it. Postgres is published on host port **5435**.
 
+**Browse implemented APIs:** with the backend running, open [http://localhost:3000/docs](http://localhost:3000/docs) (Scalar). Raw OpenAPI JSON: [http://localhost:3000/openapi.json](http://localhost:3000/openapi.json). That list is generated from registered Fastify routes; full request/response shapes stay in [API.md](API.md).
+
 ## Demo logins
 
 Shared password: `hackathon`

@@ -30,6 +30,11 @@
 | Customer quote | `GET /api/customer/quotes/:id`, `POST .../accept`, `POST .../reject` | same | `REAL API VERIFIED` | Owner only. A customer token on staff routes returns 403 |
 | Customer sign-in | `POST /api/customer-auth/sign-in/otp`, `POST .../verify` | same | `REAL API VERIFIED` | Unknown phone is told to submit an inquiry |
 | Customer orders | `GET /api/customer/orders` | same | `REAL API VERIFIED` | Read-only payments, dispatch, serials, warranty |
+| Orders | `GET/POST /api/orders`, `GET/PATCH /api/orders/:id`, `POST .../schedule` | same | `REAL API VERIFIED` | No MSW handler. 30% payment gate. Schedule assigns lead technician |
+| Payments | `GET/POST /api/orders/:id/payments` | same | `REAL API VERIFIED` | Staff records UPI, NEFT, cash, or cheque |
+| Stock | `GET /api/stock`, `PATCH /api/stock/:productId` | same | `REAL API VERIFIED` | Write: warehouse, admin |
+| Serials | `GET/POST /api/serial-units`, `POST .../scan-out` | same | `REAL API VERIFIED` | Scan-out links a unit to a dispatch |
+| Dispatches | `GET/POST /api/dispatches`, `POST .../in-transit`, `POST .../deliver` | same | `REAL API VERIFIED` | Deliver sets `deliveredAt` and moves the order to dispatched |
 
 ## When a real endpoint is done
 
