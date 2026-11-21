@@ -52,6 +52,13 @@ export function listCustomerOrders() {
   return apiClient.get<ApiResponse<CustomerOrder[]>>("/customer/orders", { headers: customerAuth() });
 }
 
+export function payCustomerOrder(
+  orderId: string,
+  body: { amountInr: number; kind: "advance" | "balance" | "full"; reference: string }
+) {
+  return apiClient.post<ApiResponse<{ id: string }>>(`/customer/orders/${orderId}/payments`, body, { headers: customerAuth() });
+}
+
 export function requestCustomerOtp(phone: string, quoteId: string) {
   return apiClient.post<{ success: boolean; devCode?: string; message?: string }>("/customer-auth/otp", { phone, quoteId });
 }

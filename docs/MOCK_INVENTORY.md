@@ -29,7 +29,8 @@
 | Customer OTP | `POST /api/customer-auth/otp`, `POST /api/customer-auth/verify` | same | `REAL API VERIFIED` | Dev responses include `devCode` outside production |
 | Customer quote | `GET /api/customer/quotes/:id`, `POST .../accept`, `POST .../reject` | same | `REAL API VERIFIED` | Owner only. A customer token on staff routes returns 403 |
 | Customer sign-in | `POST /api/customer-auth/sign-in/otp`, `POST .../verify` | same | `REAL API VERIFIED` | Unknown phone is told to submit an inquiry |
-| Customer orders | `GET /api/customer/orders` | same | `REAL API VERIFIED` | Read-only payments, dispatch, serials, warranty |
+| Customer orders | `GET /api/customer/orders` | same | `REAL API VERIFIED` | Payments, dispatch, serials, warranty |
+| Customer payment | `POST /api/customer/orders/:id/payments` | same | `REAL API VERIFIED` | Customer UPI amount + UTR. Same 30% gate |
 | Orders | `GET/POST /api/orders`, `GET/PATCH /api/orders/:id`, `POST .../schedule` | same | `REAL API VERIFIED` | No MSW handler. 30% payment gate. Schedule assigns lead technician |
 | Payments | `GET/POST /api/orders/:id/payments` | same | `REAL API VERIFIED` | Staff records UPI, NEFT, cash, or cheque |
 | Stock | `GET /api/stock`, `PATCH /api/stock/:productId` | same | `REAL API VERIFIED` | Write: warehouse, admin |

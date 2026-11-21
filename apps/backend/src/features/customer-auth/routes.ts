@@ -2,8 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { ServiceError } from "../../lib/service-error.js";
 import { parseOrReply } from "../../lib/validate.js";
 import { requireCustomer } from "../../plugins/auth.js";
-import { otpRequestSchema, otpVerifySchema, phoneSchema, quoteIdParamSchema, signInVerifySchema } from "./schema.js";
-import { customerDecide, getOwnedQuote, listCustomerOrders, requestOtp, requestSignInOtp, verifyOtp, verifySignInOtp } from "./service.js";
+import { customerPaymentSchema, otpRequestSchema, otpVerifySchema, phoneSchema, quoteIdParamSchema, signInVerifySchema } from "./schema.js";
+import { customerDecide, getOwnedQuote, listCustomerOrders, recordCustomerPayment, requestOtp, requestSignInOtp, verifyOtp, verifySignInOtp } from "./service.js";
 
 function sendKnownError(error: unknown, reply: { status: (code: number) => { send: (body: unknown) => unknown } }): boolean {
   if (error instanceof ServiceError) {
@@ -45,6 +45,21 @@ export async function customerAuthRoutes(app: FastifyInstance): Promise<void> {
 
   app.get("/api/customer/orders", { preHandler: requireCustomer }, async (request) => {
     return { success: true, data: await listCustomerOrders(request.user.customerId ?? "") };
+  });
+
+  // Customer records their own UPI payment. Staff use /api/orders/:id/payments.
+  app.post("/api/customer/orders/:id/payments", { preHandler: requireCustomer }, async (request, reply) => {
+    const params = parseOrReply(quoteIdParamSchema, request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(customerPaymentSchema, request.body, reply);
+    if (!body) return;
+    try {
+      const payment = await recordCustomerPayment(request.user.customerId ?? "", params.id, body);
+      return reply.status(201).send({ success: true, data: payment, message: "Payment recorded." });
+    } catch (error) {
+      if (sendKnownError(error, reply)) return;
+      throw error;
+    }
   });
 
   app.post("/api/customer-auth/otp", async (request, reply) => {

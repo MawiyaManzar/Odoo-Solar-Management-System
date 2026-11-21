@@ -228,7 +228,7 @@ export async function scheduleOrder(id: string, input: ScheduleInput): Promise<O
   return getOrder(id);
 }
 
-export async function recordPayment(orderId: string, input: PaymentInput, recordedBy: string): Promise<PaymentResult> {
+export async function recordPayment(orderId: string, input: PaymentInput, recordedBy: string | null): Promise<PaymentResult> {
   const { order } = await loadOrder(orderId);
   if (order.status === "cancelled") throw new ServiceError(422, "Cancelled orders cannot take payments.");
   const paymentId = newId(ID_PREFIXES.payment);

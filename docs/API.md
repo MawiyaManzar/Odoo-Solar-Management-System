@@ -221,6 +221,7 @@ Sign-in without a quote (returning customer):
 | POST | `/api/customer-auth/sign-in/otp` | public | `{ phone }` · 400 `Submit an inquiry before signing in.` if the phone is not a customer |
 | POST | `/api/customer-auth/sign-in/verify` | public | `{ phone, code }` → `{ token, customerId }` |
 | GET | `/api/customer/orders` | that customer | Own orders with `payments`, `dispatches`, and `serials` (`warrantyEndsAt`, `underWarranty`). Staff token → 403 |
+| POST | `/api/customer/orders/:id/payments` | that customer | `{ amountInr, kind, reference }` · method is `upi` · same 30% gate as staff payments · another customer’s order is 404 |
 
 ---
 

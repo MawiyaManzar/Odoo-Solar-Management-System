@@ -16,7 +16,8 @@ Owner: Charity | Branch: feat/customer-portal | Status: verified
 | :--- | :--- | :--- |
 | Request sign-in OTP | public, phone must already be a customer | n/a |
 | Read own orders | yes | no (403) |
-| Record payment or dispatch | no | existing staff features, not this screen |
+| Record own UPI payment | yes, own order only | staff still record via `/api/orders/:id/payments` |
+| Dispatch | no | warehouse |
 
 ### API contract
 `POST /api/customer-auth/sign-in/otp` public `{ phone }` → `{ success, devCode? }`. 400 `Submit an inquiry before signing in.` when the phone is unknown.
@@ -28,7 +29,7 @@ Owner: Charity | Branch: feat/customer-portal | Status: verified
 ### Screens
 Sign in (`/login`): Staff keeps email and password. Customer enters phone, requests a code, sees Development code when the API returns `devCode`, then signs in to `/my/jobs`. Unknown phone shows the server message and a link to `/inquire`. States: idle, submitting, error.
 
-My job (`/my/jobs`): no staff tabs. One block per order: status, site, total, paid, balance, payments, dispatches, serials and warranty. Loading, empty (“No orders yet”), error. No edit actions.
+My job (`/my/jobs`): navbar matches the staff shell (brand, My job, Customer badge, Sign out). One block per order: status, site, total, paid, balance, payments, dispatches, serials and warranty. When balance is left, Pay with UPI offers 30% and 50% of the order total plus a UTR. Loading skeleton, empty, error + Retry.
 
 ### Depends on
 `customers`, `customer_accounts`, `customer_otps`, `orders`, `payments`, `dispatches`, `serial_units`, `products`. All real. Quote accept already creates the order.
@@ -36,7 +37,7 @@ My job (`/my/jobs`): no staff tabs. One block per order: status, site, total, pa
 ### Assumptions (reviewed with the developer)
 | # | Assumption | Decision |
 | :--- | :--- | :--- |
-| 1 | This feature does not add staff screens to record payments or dispatches | Customer view is read-only. Rows appear when staff (or seed data) have written them. |
+| 1 | Customer payment | The customer records a UPI payment (amount + UTR) on their own order. There is no payment gateway. The 30% gate is the same as staff recording. |
 | 2 | A new phone cannot create a customer from sign-in | User asked to send them to the inquiry form. |
 | 3 | OTP is the existing development code, not SMS | User asked for a developer OTP. |
 | 4 | Warranty uses `serial_units.delivered_at` plus `products.default_warranty_months` | Phase 1 rule in `docs/db-schema.md`. |
