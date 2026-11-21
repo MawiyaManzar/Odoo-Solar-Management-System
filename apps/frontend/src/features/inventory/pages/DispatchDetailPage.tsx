@@ -150,7 +150,7 @@ export const DispatchDetailPage: React.FC = () => {
             </form>
           )}
           {scanError && (
-            <Alert variant="danger" title="Scan failed">
+            <Alert variant="danger" title="Request failed">
               {scanError}
             </Alert>
           )}

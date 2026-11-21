@@ -11,7 +11,6 @@ import type { QuoteItem } from "../../quotes/types";
 import {
   acceptCustomerQuote,
   getCustomerQuote,
-  getCustomerToken,
   rejectCustomerQuote,
   requestCustomerOtp,
   setCustomerToken,
@@ -24,7 +23,6 @@ export const CustomerQuotePage: React.FC = () => {
   const [code, setCode] = useState("");
   const [devCode, setDevCode] = useState<string | null>(null);
   const [quote, setQuote] = useState<QuoteItem | null>(null);
-  const [signedIn, setSignedIn] = useState(Boolean(getCustomerToken()));
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,7 +30,6 @@ export const CustomerQuotePage: React.FC = () => {
   const loadQuote = async () => {
     const response = await getCustomerQuote(quoteId);
     setQuote(response.data);
-    setSignedIn(true);
   };
 
   const onRequest = async (event: React.FormEvent) => {
@@ -99,11 +96,6 @@ export const CustomerQuotePage: React.FC = () => {
               <Input label="Code" required inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value)} />
               <Button type="submit" variant="secondary" isLoading={busy}>Sign in</Button>
             </form>
-            {signedIn && (
-              <Button type="button" variant="outline" onClick={() => void loadQuote().catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not load quote."))}>
-                Open quote
-              </Button>
-            )}
           </>
         )}
         {quote && (
