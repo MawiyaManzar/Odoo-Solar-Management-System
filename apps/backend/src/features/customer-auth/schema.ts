@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { indianMobileSchema } from "../../lib/phone.js";
 
 export const phoneSchema = z.object({
-  phone: z.string().trim().min(8, "Enter the mobile number from your inquiry.")
+  phone: indianMobileSchema
 });
 
 export const signInVerifySchema = phoneSchema.extend({

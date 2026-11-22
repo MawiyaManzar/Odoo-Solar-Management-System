@@ -15,7 +15,7 @@ const SURVEY_SCHEDULE_STATUSES = new Set<EnquiryStatus>(["new", "qualifying", "s
 
 export interface EnquiryView extends EnquiryResult {
   customerName: string;
-  customerPhone: string;
+  customerPhone: number;
   addressLine: string;
   city: string;
 }

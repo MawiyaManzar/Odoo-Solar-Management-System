@@ -50,7 +50,7 @@ export const userResultSchema = z.object({
   name: z.string(),
   companyName: z.string(),
   role: z.enum(USER_ROLES),
-  phone: z.string().nullable(),
+  phone: z.number().int().nullable(),
   isActive: z.boolean(),
   createdAt: isoDateTime
 });
@@ -59,7 +59,7 @@ export type UserResult = z.infer<typeof userResultSchema>;
 export const customerResultSchema = z.object({
   id: z.string(),
   name: z.string(),
-  phone: z.string(),
+  phone: z.number().int(),
   email: z.string().nullable(),
   addressLine: z.string(),
   city: z.string(),

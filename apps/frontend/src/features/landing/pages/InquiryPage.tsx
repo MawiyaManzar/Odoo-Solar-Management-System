@@ -6,6 +6,14 @@ import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
 import { Skeleton } from "../../../components/ui/Skeleton";
+import { isValidPersonName, lettersOnlyName } from "../../../lib/person-name";
+import { digitsOnlyPhone, parseIndianMobile } from "../../../lib/phone";
+import {
+  digitsOnlyPincode,
+  isValidOptionalIndianPincode,
+  parseDecimalInput,
+  sanitizeDecimalInput
+} from "../../../lib/pincode";
 import { submitPublicEnquiry } from "../../catalog/catalog.api";
 import { usePublicInquiryForm } from "../../inquiry-form/hooks/usePublicInquiryForm";
 import type { InquiryQuestionPublic } from "../../inquiry-form/types";
@@ -21,8 +29,10 @@ function questionAnswered(question: InquiryQuestionPublic, answers: AnswerMap): 
   const value = answers[question.id];
   if (question.fieldType === "boolean") return typeof value === "boolean" || value === "true" || value === "false";
   if (question.fieldType === "number") {
-    const num = typeof value === "number" ? value : Number(value);
-    return !Number.isNaN(num);
+    const num = parseDecimalInput(value);
+    // Empty string Number("") === 0 — do not treat blank as answered.
+    if (num == null) return !question.isRequired;
+    return num > 0;
   }
   return String(value ?? "").trim().length > 0;
 }
@@ -30,9 +40,8 @@ function questionAnswered(question: InquiryQuestionPublic, answers: AnswerMap): 
 function deriveRequestedKw(questions: InquiryQuestionPublic[], answers: AnswerMap): number {
   const mapped = questions.find((question) => question.mapsTo === "requestedKw");
   if (!mapped || !(mapped.id in answers)) return DEFAULT_REQUESTED_KW;
-  const raw = answers[mapped.id];
-  const num = typeof raw === "number" ? raw : Number(raw);
-  return Number.isNaN(num) || num <= 0 ? DEFAULT_REQUESTED_KW : num;
+  const num = parseDecimalInput(answers[mapped.id]);
+  return num == null || num <= 0 ? DEFAULT_REQUESTED_KW : Math.min(num, 999.9);
 }
 
 export const InquiryPage: React.FC = () => {
@@ -59,7 +68,9 @@ export const InquiryPage: React.FC = () => {
   const isContact = currentStepId === CONTACT_STEP;
   const progress = steps.length > 0 ? Math.round(((safeStepIndex + 1) / steps.length) * 100) : 100;
 
-  const contactReady = Boolean(name.trim() && phone.trim().length >= 8 && addressLine.trim() && city.trim());
+  const contactReady = Boolean(
+    isValidPersonName(name) && parseIndianMobile(phone) != null && addressLine.trim() && city.trim()
+  );
 
   const canAdvance = (): boolean => {
     if (isContact) return contactReady;
@@ -74,9 +85,14 @@ export const InquiryPage: React.FC = () => {
 
   const goNext = () => {
     if (!canAdvance()) {
-      setFieldError(currentQuestion?.isRequired ? "Please answer this question." : null);
+      if (currentQuestion?.fieldType === "number") {
+        setFieldError("Enter a number greater than 0 (digits only, no letters).");
+      } else {
+        setFieldError(currentQuestion?.isRequired ? "Please answer this question." : null);
+      }
       return;
     }
+    setFieldError(null);
     setStepIndex((index) => Math.min(index + 1, steps.length - 1));
   };
 
@@ -92,29 +108,48 @@ export const InquiryPage: React.FC = () => {
       goNext();
       return;
     }
+    if (!isValidPersonName(name)) {
+      setFieldError("Name must contain letters only (no numbers or special characters).");
+      return;
+    }
     if (!contactReady) {
       setFieldError("Fill name, phone, address, and city.");
+      return;
+    }
+    if (!isValidOptionalIndianPincode(pincode)) {
+      setFieldError("PIN code must be 6 digits (numbers only).");
       return;
     }
 
     const payloadAnswers = questions
       .filter((question) => question.id in answers)
-      .map((question) => ({
-        questionId: question.id,
-        value: answers[question.id]
-      }));
+      .map((question) => {
+        const raw = answers[question.id];
+        if (question.fieldType === "number") {
+          const num = parseDecimalInput(raw);
+          return { questionId: question.id, value: num ?? raw };
+        }
+        return { questionId: question.id, value: raw };
+      });
 
     setFieldError(null);
     setIsSubmitting(true);
     setError(null);
     try {
+      const mobile = parseIndianMobile(phone);
+      if (mobile == null) {
+        setFieldError("Enter a 10-digit Indian mobile number.");
+        setIsSubmitting(false);
+        return;
+      }
+      const pin = digitsOnlyPincode(pincode);
       const response = await submitPublicEnquiry({
         name: name.trim(),
-        phone: phone.trim(),
+        phone: mobile,
         email: email.trim() || undefined,
         addressLine: addressLine.trim(),
         city: city.trim(),
-        pincode: pincode.trim() || undefined,
+        pincode: pin || undefined,
         customerType: "residential",
         requestedKw: deriveRequestedKw(questions, answers),
         answers: payloadAnswers
@@ -159,11 +194,12 @@ export const InquiryPage: React.FC = () => {
         <Input
           label={question.label}
           required={question.isRequired}
-          type="number"
-          step="0.1"
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
           value={value === undefined ? "" : String(value)}
           helperText={question.helpText ?? undefined}
-          onChange={(event) => setAnswer(question.id, event.target.value)}
+          onChange={(event) => setAnswer(question.id, sanitizeDecimalInput(event.target.value))}
         />
       );
     }
@@ -295,8 +331,23 @@ export const InquiryPage: React.FC = () => {
                     {fieldError}
                   </Alert>
                 )}
-                <Input label="Full name" required value={name} onChange={(event) => setName(event.target.value)} />
-                <Input label="WhatsApp / phone" required value={phone} onChange={(event) => setPhone(event.target.value)} />
+                <Input
+                  label="Full name"
+                  required
+                  autoComplete="name"
+                  value={name}
+                  helperText="Letters and spaces only"
+                  onChange={(event) => setName(lettersOnlyName(event.target.value))}
+                />
+                <Input
+                  label="WhatsApp / phone"
+                  required
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(digitsOnlyPhone(event.target.value))}
+                />
                 <Input label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
                 <Input
                   label="Address"
@@ -305,7 +356,16 @@ export const InquiryPage: React.FC = () => {
                   onChange={(event) => setAddressLine(event.target.value)}
                 />
                 <Input label="City" required value={city} onChange={(event) => setCity(event.target.value)} />
-                <Input label="PIN code" value={pincode} onChange={(event) => setPincode(event.target.value)} />
+                <Input
+                  label="PIN code"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="postal-code"
+                  maxLength={6}
+                  value={pincode}
+                  helperText="6 digits, numbers only"
+                  onChange={(event) => setPincode(digitsOnlyPincode(event.target.value))}
+                />
               </div>
             )}
 

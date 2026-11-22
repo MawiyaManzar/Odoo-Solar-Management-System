@@ -16,7 +16,7 @@ const NAV = [
   { to: "/my/jobs", label: "My Job", icon: BriefcaseIcon },
   { to: "/my/quotes", label: "My Quotes", icon: FileTextIcon },
   { to: "/my/service", label: "Service Requests", icon: WrenchIcon },
-  { to: "/my/support", label: "Ask Support", icon: MessageCircleIcon }
+  { to: "/my/support", label: "Support", icon: MessageCircleIcon }
 ] as const;
 
 export const CustomerShell: React.FC = () => {
@@ -91,11 +91,9 @@ export const CustomerShell: React.FC = () => {
             <strong style={{ fontSize: "var(--text-sm)", color: "var(--text)" }}>Need help?</strong>
           </div>
           <p style={{ margin: 0, fontSize: "var(--text-xs)", color: "var(--text-muted)" }}>
-            Ask about payment, dispatch, warranty, or your quote.
+            In-app support is coming soon. Contact SunPower by phone for payment, dispatch, warranty, or quote help.
           </p>
-          <Button size="sm" variant="primary" onClick={() => navigate("/my/support")}>
-            Ask Support
-          </Button>
+          <Badge variant="warning">Coming soon</Badge>
         </div>
       </aside>
 

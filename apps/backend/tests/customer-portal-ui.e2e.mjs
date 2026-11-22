@@ -17,13 +17,13 @@ async function customerToken(app) {
   const otp = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/otp",
-    payload: { phone: "9876543210" }
+    payload: { phone: 9876543210 }
   });
   const code = otp.json().devCode;
   const verified = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/verify",
-    payload: { phone: "9876543210", code }
+    payload: { phone: 9876543210, code }
   });
   return verified.json().data?.token;
 }

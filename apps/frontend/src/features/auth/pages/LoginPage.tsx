@@ -4,6 +4,7 @@ import { Alert } from "../../../components/ui/Alert";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { useAuth } from "../../../app/AuthProvider";
+import { digitsOnlyPhone, parseIndianMobile } from "../../../lib/phone";
 import { requestSignInOtp, setCustomerToken, verifySignInOtp } from "../../customer-quotes/customer-quote.api";
 import { AuthLayout } from "../components/AuthLayout";
 
@@ -33,11 +34,16 @@ export const LoginPage: React.FC = () => {
   };
 
   const requestCode = async () => {
+    const mobile = parseIndianMobile(phone);
+    if (mobile == null) {
+      setError("Enter a 10-digit Indian mobile number.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     setDevCode(null);
     try {
-      const response = await requestSignInOtp(phone);
+      const response = await requestSignInOtp(mobile);
       if (response.devCode) setDevCode(response.devCode);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send a code.");
@@ -48,10 +54,15 @@ export const LoginPage: React.FC = () => {
 
   const handleCustomer = async (event: React.FormEvent) => {
     event.preventDefault();
+    const mobile = parseIndianMobile(phone);
+    if (mobile == null) {
+      setError("Enter a 10-digit Indian mobile number.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const response = await verifySignInOtp(phone, code);
+      const response = await verifySignInOtp(mobile, code);
       setCustomerToken(response.data.token);
       navigate("/my/jobs");
     } catch (err) {
@@ -135,7 +146,15 @@ export const LoginPage: React.FC = () => {
             </Alert>
           )}
           {devCode && <Alert variant="neutral" title="Development code">{devCode}</Alert>}
-          <Input label="Mobile number" required value={phone} onChange={(event) => setPhone(event.target.value)} />
+          <Input
+            label="Mobile number"
+            required
+            type="tel"
+            inputMode="numeric"
+            autoComplete="tel"
+            value={phone}
+            onChange={(event) => setPhone(digitsOnlyPhone(event.target.value))}
+          />
           <Button type="button" variant="secondary" isLoading={isLoading} onClick={() => void requestCode()}>
             Request code
           </Button>

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { PACKAGE_SYSTEM_KINDS, PRODUCT_CATEGORIES } from "../../db/schema/catalog.js";
 import { CUSTOMER_TYPES } from "../../db/schema/customers.js";
 import { ENQUIRY_SYSTEM_KINDS } from "../../db/schema/enquiries.js";
+import { indianMobileSchema, optionalIndianPincodeSchema, personNameSchema } from "../../lib/phone.js";
 
 export const idParamSchema = z.object({
   id: z.string().min(1)
@@ -55,12 +56,12 @@ export const publicEnquiryAnswerSchema = z.object({
 });
 
 export const publicEnquiryBodySchema = z.object({
-  name: z.string().trim().min(1),
-  phone: z.string().trim().min(8),
+  name: personNameSchema,
+  phone: indianMobileSchema,
   email: z.string().trim().email().optional().or(z.literal("")),
   addressLine: z.string().trim().min(1),
   city: z.string().trim().min(1),
-  pincode: z.string().trim().optional(),
+  pincode: optionalIndianPincodeSchema,
   customerType: z.enum(CUSTOMER_TYPES).optional(),
   /** Matches `enquiries.requested_kw numeric(4, 1)` */
   requestedKw: z.number().positive().max(999.9),

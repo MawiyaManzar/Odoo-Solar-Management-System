@@ -5,7 +5,7 @@ export interface SeedUser {
   email: string;
   name: string;
   role: "admin" | "sales" | "warehouse" | "technician" | "support";
-  phone?: string;
+  phone?: number;
 }
 
 export interface SeedRecord {
@@ -24,35 +24,35 @@ export const starterUsersSeedData: SeedUser[] = [
     email: "admin@sunpower.in",
     name: "Director Kaur",
     role: "admin",
-    phone: "9811100001"
+    phone: 9811100001
   },
   {
     id: "usr-sales-01",
     email: "sales@sunpower.in",
     name: "Priya Shah",
     role: "sales",
-    phone: "9811100002"
+    phone: 9811100002
   },
   {
     id: "usr-warehouse-01",
     email: "warehouse@sunpower.in",
     name: "Ravi Mehta",
     role: "warehouse",
-    phone: "9811100003"
+    phone: 9811100003
   },
   {
     id: "usr-tech-01",
     email: "tech@sunpower.in",
     name: "Harpreet Singh",
     role: "technician",
-    phone: "9811100004"
+    phone: 9811100004
   },
   {
     id: "usr-support-01",
     email: "support@sunpower.in",
     name: "Neha Gill",
     role: "support",
-    phone: "9811100005"
+    phone: 9811100005
   }
 ];
 

@@ -1,4 +1,4 @@
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { customers } from "./customers.js";
 
 export const customerAccounts = pgTable("customer_accounts", {
@@ -7,13 +7,13 @@ export const customerAccounts = pgTable("customer_accounts", {
     .notNull()
     .unique()
     .references(() => customers.id),
-  phone: text("phone").notNull().unique(),
+  phone: bigint("phone", { mode: "number" }).notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
 });
 
 export const customerOtps = pgTable("customer_otps", {
   id: text("id").primaryKey(),
-  phone: text("phone").notNull(),
+  phone: bigint("phone", { mode: "number" }).notNull(),
   codeHash: text("code_hash").notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   attempts: integer("attempts").notNull().default(0),

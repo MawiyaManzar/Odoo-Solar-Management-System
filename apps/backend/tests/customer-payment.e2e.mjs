@@ -49,12 +49,12 @@ async function runTests() {
   const otp = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/otp",
-    payload: { phone: "9876543210" }
+    payload: { phone: 9876543210 }
   });
   const verified = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/verify",
-    payload: { phone: "9876543210", code: otp.json().devCode }
+    payload: { phone: 9876543210, code: otp.json().devCode }
   });
   const token = verified.json().data?.token;
   const auth = { authorization: `Bearer ${token}` };

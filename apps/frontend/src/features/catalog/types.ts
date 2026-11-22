@@ -57,7 +57,7 @@ export interface PublicEnquiryAnswer {
 
 export interface PublicEnquiryInput {
   name: string;
-  phone: string;
+  phone: number;
   email?: string;
   addressLine: string;
   city: string;

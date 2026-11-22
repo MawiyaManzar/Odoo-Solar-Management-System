@@ -14,7 +14,7 @@ export interface EnquiryItem {
   createdAt: string;
   updatedAt: string;
   customerName: string;
-  customerPhone: string;
+  customerPhone: number;
   addressLine: string;
   city: string;
 }

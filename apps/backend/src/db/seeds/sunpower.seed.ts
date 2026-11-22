@@ -3,7 +3,7 @@
 export const sunpowerCustomer = {
   id: "cus-01",
   name: "Amit Verma",
-  phone: "9876543210",
+  phone: 9876543210,
   email: "amit.verma@example.com",
   addressLine: "12 Model Town",
   city: "Jalandhar",

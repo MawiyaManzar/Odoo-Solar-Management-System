@@ -15,6 +15,7 @@ import {
   setCustomerToken,
   verifyCustomerOtp
 } from "../customer-quote.api";
+import { digitsOnlyPhone, parseIndianMobile } from "../../../lib/phone";
 
 export const CustomerQuotePage: React.FC = () => {
   const { quoteId = "" } = useParams();
@@ -33,11 +34,16 @@ export const CustomerQuotePage: React.FC = () => {
 
   const onRequest = async (event: React.FormEvent) => {
     event.preventDefault();
+    const mobile = parseIndianMobile(phone);
+    if (mobile == null) {
+      setError("Enter a 10-digit Indian mobile number.");
+      return;
+    }
     setBusy(true);
     setError(null);
     setDevCode(null);
     try {
-      const response = await requestCustomerOtp(phone, quoteId);
+      const response = await requestCustomerOtp(mobile, quoteId);
       if (response.devCode) setDevCode(response.devCode);
       setInfo("Enter the 6-digit code.");
     } catch (err) {
@@ -49,10 +55,15 @@ export const CustomerQuotePage: React.FC = () => {
 
   const onVerify = async (event: React.FormEvent) => {
     event.preventDefault();
+    const mobile = parseIndianMobile(phone);
+    if (mobile == null) {
+      setError("Enter a 10-digit Indian mobile number.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
-      const response = await verifyCustomerOtp(phone, quoteId, code);
+      const response = await verifyCustomerOtp(mobile, quoteId, code);
       setCustomerToken(response.data.token);
       await loadQuote();
       setInfo(null);
@@ -86,7 +97,15 @@ export const CustomerQuotePage: React.FC = () => {
         {!quote && (
           <>
             <form onSubmit={onRequest} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <Input label="Mobile number from your inquiry" required value={phone} onChange={(event) => setPhone(event.target.value)} />
+              <Input
+                label="Mobile number from your inquiry"
+                required
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                value={phone}
+                onChange={(event) => setPhone(digitsOnlyPhone(event.target.value))}
+              />
               <Button type="submit" isLoading={busy}>Request code</Button>
             </form>
             <form onSubmit={onVerify} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

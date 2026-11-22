@@ -7,9 +7,11 @@ export interface DialogProps {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  /** Max content width; defaults to 520px. */
+  width?: string;
 }
 
-export const Dialog: React.FC<DialogProps> = ({ open, title, onClose, children }) => {
+export const Dialog: React.FC<DialogProps> = ({ open, title, onClose, children, width = "520px" }) => {
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -42,7 +44,10 @@ export const Dialog: React.FC<DialogProps> = ({ open, title, onClose, children }
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
         style={{
-          width: "min(520px, 100%)",
+          width: `min(${width}, 100%)`,
+          maxHeight: "min(90vh, 100%)",
+          overflowY: "auto",
+
           backgroundColor: "var(--card)",
           border: "var(--border-strong)",
           borderRadius: "var(--radius-card)",

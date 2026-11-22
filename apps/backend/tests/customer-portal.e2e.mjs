@@ -25,7 +25,7 @@ async function runTests() {
   const unknown = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/otp",
-    payload: { phone: "9000000001" }
+    payload: { phone: 9000000001 }
   });
   assert(unknown.statusCode === 400, "unknown phone is 400", state);
   assert(unknown.json().message === "Submit an inquiry before signing in.", "message tells them to inquire", state);
@@ -34,7 +34,7 @@ async function runTests() {
   const otp = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/otp",
-    payload: { phone: "9876543210" }
+    payload: { phone: 9876543210 }
   });
   const otpBody = otp.json();
   assert(otp.statusCode === 200, "known phone is 200", state);
@@ -43,7 +43,7 @@ async function runTests() {
   const verified = await app.inject({
     method: "POST",
     url: "/api/customer-auth/sign-in/verify",
-    payload: { phone: "9876543210", code: otpBody.devCode }
+    payload: { phone: 9876543210, code: otpBody.devCode }
   });
   const token = verified.json().data?.token;
   assert(verified.statusCode === 200 && Boolean(token), "verify returns a token", state);

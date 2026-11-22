@@ -235,8 +235,14 @@ export async function resolveInquiryAnswers(answers: InquiryAnswerInput[]): Prom
       mapSource = boolVal;
       displayLabel = boolVal ? "Yes" : "No";
     } else if (q.fieldType === "number") {
+      if (typeof raw === "string" && raw.trim() === "") {
+        throw new ServiceError(400, `${q.label} must be a number.`);
+      }
+      if (typeof raw === "string" && /[^\d.\-]/.test(raw.trim())) {
+        throw new ServiceError(400, `${q.label} must be a number — letters are not allowed.`);
+      }
       const num = typeof raw === "number" ? raw : Number(raw);
-      if (Number.isNaN(num)) throw new ServiceError(400, `${q.label} must be a number.`);
+      if (!Number.isFinite(num)) throw new ServiceError(400, `${q.label} must be a number.`);
       mapSource = num;
       displayLabel = String(num);
     } else {

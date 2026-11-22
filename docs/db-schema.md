@@ -52,7 +52,7 @@ Who: sales, warehouse, technicians, support, director/admin.
 | `password_hash` | text NOT NULL | |
 | `name` | text NOT NULL | |
 | `role` | text NOT NULL | `admin` \| `sales` \| `warehouse` \| `technician` \| `support` |
-| `phone` | text | optional |
+| `phone` | bigint | optional Indian mobile (10 digits; exceeds 32-bit int) |
 | `is_active` | boolean NOT NULL DEFAULT true | |
 | `created_at` | timestamptz NOT NULL DEFAULT now() | |
 
@@ -73,7 +73,7 @@ VALUES ('usr_sales1', 'priya@sunpower.in', '...', 'Priya Shah', 'sales');
 | --- | --- | --- |
 | `id` | text PK | |
 | `name` | text NOT NULL | |
-| `phone` | text NOT NULL | unique per company practice |
+| `phone` | bigint NOT NULL | unique; Indian mobile as number (e.g. `9876543210`) |
 | `email` | text | |
 | `address_line` | text NOT NULL | |
 | `city` | text NOT NULL | |
@@ -87,7 +87,7 @@ VALUES ('usr_sales1', 'priya@sunpower.in', '...', 'Priya Shah', 'sales');
 
 ```sql
 INSERT INTO customers (id, name, phone, address_line, city, pincode, customer_type)
-VALUES ('cus_01', 'Amit Verma', '9876543210', '12 Model Town', 'Jalandhar', '144001', 'residential');
+VALUES ('cus_01', 'Amit Verma', 9876543210, '12 Model Town', 'Jalandhar', '144001', 'residential');
 ```
 
 ---

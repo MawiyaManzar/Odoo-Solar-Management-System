@@ -122,7 +122,7 @@ async function runTests() {
   const systemKind = publicQuestions.find((q) => q.key === "system_kind");
   const subsidy = publicQuestions.find((q) => q.key === "wants_subsidy");
 
-  const phone = `97${String(Date.now()).slice(-8)}`;
+  const phone = Number(`97${String(Date.now()).slice(-8)}`);
   const answers = [
     { questionId: ownership.id, value: "yes" },
     { questionId: roofType.id, value: "concrete" },
@@ -161,7 +161,7 @@ async function runTests() {
     url: "/api/public/enquiries",
     payload: {
       name: "Missing Answers",
-      phone: `96${String(Date.now()).slice(-8)}`,
+      phone: Number(`96${String(Date.now()).slice(-8)}`),
       addressLine: "1 Test Road",
       city: "Ludhiana",
       requestedKw: 3,

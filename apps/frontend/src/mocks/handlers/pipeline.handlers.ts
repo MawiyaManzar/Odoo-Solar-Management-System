@@ -21,7 +21,7 @@ const enquiries: EnquiryItem[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     customerName: "Amit Verma",
-    customerPhone: "9876543210",
+    customerPhone: 9876543210,
     addressLine: "12 Model Town",
     city: "Jalandhar"
   }
@@ -29,7 +29,7 @@ const enquiries: EnquiryItem[] = [
 
 const surveys: SurveyItem[] = [];
 const quotes: QuoteItem[] = [];
-const otpByPhone = new Map<string, string>();
+const otpByPhone = new Map<number, string>();
 
 type MockCustomerOrder = {
   id: string;
@@ -345,16 +345,16 @@ export const pipelineHandlers = [
   }),
 
   http.post("/api/customer-auth/sign-in/otp", async ({ request }) => {
-    const body = (await request.json()) as { phone: string };
-    if (body.phone !== "9876543210") {
+    const body = (await request.json()) as { phone: number };
+    if (Number(body.phone) !== 9876543210) {
       return HttpResponse.json({ success: false, message: "Submit an inquiry before signing in." }, { status: 400 });
     }
     return HttpResponse.json({ success: true, devCode: "123456", message: "Code sent." });
   }),
 
   http.post("/api/customer-auth/sign-in/verify", async ({ request }) => {
-    const body = (await request.json()) as { phone: string; code: string };
-    if (body.phone !== "9876543210" || body.code !== "123456") {
+    const body = (await request.json()) as { phone: number; code: string };
+    if (Number(body.phone) !== 9876543210 || body.code !== "123456") {
       return HttpResponse.json({ success: false, message: "That code is not correct." }, { status: 400 });
     }
     return HttpResponse.json({ success: true, data: { token: "customer.cus-01", customerId: "cus-01" } });
@@ -498,22 +498,24 @@ export const pipelineHandlers = [
   }),
 
   http.post("/api/customer-auth/otp", async ({ request }) => {
-    const body = (await request.json()) as { phone: string; quoteId: string };
+    const body = (await request.json()) as { phone: number; quoteId: string };
+    const phone = Number(body.phone);
     const quote = quotes.find((item) => item.id === body.quoteId);
     const enquiry = enquiries.find((item) => item.id === quote?.enquiryId);
-    if (!quote || !enquiry || enquiry.customerPhone !== body.phone) {
+    if (!quote || !enquiry || enquiry.customerPhone !== phone) {
       return HttpResponse.json({ success: false, message: "Use the mobile number from your inquiry." }, { status: 400 });
     }
     if (!["sent", "accepted", "rejected"].includes(quote.status)) {
       return HttpResponse.json({ success: false, message: "This quote is not ready to view." }, { status: 400 });
     }
-    otpByPhone.set(body.phone, "123456");
+    otpByPhone.set(phone, "123456");
     return HttpResponse.json({ success: true, devCode: "123456", message: "Code sent." });
   }),
 
   http.post("/api/customer-auth/verify", async ({ request }) => {
-    const body = (await request.json()) as { phone: string; quoteId: string; code: string };
-    if (otpByPhone.get(body.phone) !== body.code) {
+    const body = (await request.json()) as { phone: number; quoteId: string; code: string };
+    const phone = Number(body.phone);
+    if (otpByPhone.get(phone) !== body.code) {
       return HttpResponse.json({ success: false, message: "That code is not correct." }, { status: 400 });
     }
     const quote = quotes.find((item) => item.id === body.quoteId);

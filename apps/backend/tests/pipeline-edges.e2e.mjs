@@ -43,7 +43,7 @@ async function runTests() {
   await db.insert(customers).values({
     id: customerId,
     name: "Edge Case Customer",
-    phone: `98${suffix.slice(-8)}`,
+    phone: Number(`98${suffix.slice(-8)}`),
     addressLine: "1 Test Road",
     city: "Jalandhar",
     pincode: "144001"

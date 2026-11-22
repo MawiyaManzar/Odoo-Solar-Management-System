@@ -130,8 +130,17 @@ export const CatalogPage: React.FC = () => {
     setPackageOpen(true);
   };
 
-  const productName = (productId: string) =>
-    products.find((item) => item.id === productId)?.name ?? productId;
+  const productFor = (productId: string) => products.find((item) => item.id === productId);
+
+  const packagePartsCostInr = packageLines.reduce((sum, line) => {
+    const product = productFor(line.productId);
+    const qty = Number(line.qty);
+    if (!product || Number.isNaN(qty)) return sum;
+    return sum + product.unitCostInr * qty;
+  }, 0);
+
+  const formatInr = (value: number) =>
+    value.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
   const savePackage = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -301,20 +310,23 @@ export const CatalogPage: React.FC = () => {
         </form>
       </Dialog>
 
-      <Dialog open={packageOpen} title="New package" onClose={() => setPackageOpen(false)}>
+      <Dialog open={packageOpen} title="New package" onClose={() => setPackageOpen(false)} width="720px">
         <form onSubmit={savePackage} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {formError && <Alert variant="danger" title="Save failed">{formError}</Alert>}
           <Input label="Name" required value={packageName} onChange={(event) => setPackageName(event.target.value)} />
           <Select label="Kind" value={systemKind} onChange={(event) => setSystemKind(event.target.value)} options={KINDS.map((value) => ({ value, label: value.replace(/_/g, " ") }))} />
-          <Input label="kW" type="number" min="0" step="0.1" value={capacityKw} onChange={(event) => setCapacityKw(event.target.value)} helperText="Code is assigned automatically from kind and kW (e.g. OG-3KW)." />
-          <Input label="Base price (INR)" required type="number" min="0" value={basePrice} onChange={(event) => setBasePrice(event.target.value)} />
+          <Input label="kW" type="number" min="0" step="0.1" value={capacityKw} onChange={(event) => setCapacityKw(event.target.value)} />
           {packageLines.length > 0 && (
             <Table
               data={packageLines}
               keyExtractor={(item) => item.productId}
               emptyMessage="No products yet."
               columns={[
-                { key: "product", header: "Product", render: (item) => productName(item.productId) },
+                {
+                  key: "product",
+                  header: "Product",
+                  render: (item) => productFor(item.productId)?.name ?? item.productId
+                },
                 {
                   key: "qty",
                   header: "Qty",
@@ -333,6 +345,26 @@ export const CatalogPage: React.FC = () => {
                       }
                     />
                   )
+                },
+                {
+                  key: "unitCost",
+                  header: "Unit cost",
+                  align: "right",
+                  render: (item) => {
+                    const product = productFor(item.productId);
+                    return product ? formatInr(product.unitCostInr) : "—";
+                  }
+                },
+                {
+                  key: "lineCost",
+                  header: "Line cost",
+                  align: "right",
+                  render: (item) => {
+                    const product = productFor(item.productId);
+                    const qty = Number(item.qty);
+                    if (!product || Number.isNaN(qty)) return "—";
+                    return formatInr(product.unitCostInr * qty);
+                  }
                 },
                 {
                   key: "remove",
@@ -364,8 +396,25 @@ export const CatalogPage: React.FC = () => {
             }}
             options={[
               { value: "", label: "Choose a product" },
-              ...products.map((item) => ({ value: item.id, label: `${item.sku} · ${item.name}` }))
+              ...products.map((item) => ({
+                value: item.id,
+                label: `${item.sku} · ${item.name} · cost ${formatInr(item.unitCostInr)}`
+              }))
             ]}
+          />
+          {packageLines.length > 0 && (
+            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
+              Parts cost to us: {formatInr(packagePartsCostInr)} INR
+            </p>
+          )}
+          <Input
+            label="Package price (INR)"
+            required
+            type="number"
+            min="0"
+            value={basePrice}
+            helperText="Selling price for the whole package. Parts cost above is what it costs us."
+            onChange={(event) => setBasePrice(event.target.value)}
           />
           <Button type="submit" isLoading={saving} disabled={products.length === 0 || packageLines.length === 0}>
             Save package

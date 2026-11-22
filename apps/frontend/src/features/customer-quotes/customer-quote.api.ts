@@ -18,11 +18,11 @@ function customerAuth(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export function requestSignInOtp(phone: string) {
+export function requestSignInOtp(phone: number) {
   return apiClient.post<{ success: boolean; devCode?: string; message?: string }>("/customer-auth/sign-in/otp", { phone });
 }
 
-export function verifySignInOtp(phone: string, code: string) {
+export function verifySignInOtp(phone: number, code: string) {
   return apiClient.post<ApiResponse<{ token: string; customerId: string }>>("/customer-auth/sign-in/verify", { phone, code });
 }
 
@@ -116,11 +116,11 @@ export function confirmCustomerCheckout(orderId: string, sessionId: string) {
   );
 }
 
-export function requestCustomerOtp(phone: string, quoteId: string) {
+export function requestCustomerOtp(phone: number, quoteId: string) {
   return apiClient.post<{ success: boolean; devCode?: string; message?: string }>("/customer-auth/otp", { phone, quoteId });
 }
 
-export function verifyCustomerOtp(phone: string, quoteId: string, code: string) {
+export function verifyCustomerOtp(phone: number, quoteId: string, code: string) {
   return apiClient.post<ApiResponse<{ token: string; customerId: string }>>("/customer-auth/verify", { phone, quoteId, code });
 }
 

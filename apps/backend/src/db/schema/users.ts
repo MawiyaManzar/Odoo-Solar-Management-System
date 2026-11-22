@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 /** Staff roles for SunPower (see docs/db-schema.md). */
 export const USER_ROLES = ["admin", "sales", "warehouse", "technician", "support"] as const;
@@ -15,7 +15,7 @@ export const users = pgTable(
     /** Retained for auth signup UI; SunPower is single-company in v1. */
     companyName: text("company_name").notNull().default(""),
     role: text("role").notNull(),
-    phone: text("phone"),
+    phone: bigint("phone", { mode: "number" }),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },

@@ -32,7 +32,7 @@ async function runTests() {
   const questions = form.json().data?.questions ?? [];
   const byKey = Object.fromEntries(questions.map((q) => [q.key, q]));
 
-  const phone = `98${String(Date.now()).slice(-8)}`;
+  const phone = Number(`98${String(Date.now()).slice(-8)}`);
   const created = await app.inject({
     method: "POST",
     url: "/api/public/enquiries",

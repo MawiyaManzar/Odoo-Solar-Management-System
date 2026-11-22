@@ -36,7 +36,7 @@ function devCodeAllowed(): boolean {
   return process.env.NODE_ENV !== "production";
 }
 
-async function quoteForPhone(quoteId: string, phone: string) {
+async function quoteForPhone(quoteId: string, phone: number) {
   const [row] = await db
     .select({ quote: quotes, customer: customers })
     .from(quotes)
@@ -53,7 +53,7 @@ async function quoteForPhone(quoteId: string, phone: string) {
   return row;
 }
 
-async function issueCode(phone: string): Promise<{ devCode?: string }> {
+async function issueCode(phone: number): Promise<{ devCode?: string }> {
   const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
   const now = new Date();
   await db
@@ -74,12 +74,12 @@ async function issueCode(phone: string): Promise<{ devCode?: string }> {
   return {};
 }
 
-async function customerByPhone(phone: string) {
+async function customerByPhone(phone: number) {
   const [customer] = await db.select().from(customers).where(eq(customers.phone, phone)).limit(1);
   return customer ?? null;
 }
 
-async function consumeCode(phone: string, code: string): Promise<void> {
+async function consumeCode(phone: number, code: string): Promise<void> {
   const [otp] = await db
     .select()
     .from(customerOtps)
@@ -103,7 +103,7 @@ async function consumeCode(phone: string, code: string): Promise<void> {
   await db.update(customerOtps).set({ consumedAt: new Date() }).where(eq(customerOtps.id, otp.id));
 }
 
-async function ensureAccount(customerId: string, phone: string): Promise<{ accountId: string; customerId: string }> {
+async function ensureAccount(customerId: string, phone: number): Promise<{ accountId: string; customerId: string }> {
   const [existing] = await db.select().from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
   if (existing) return { accountId: existing.id, customerId: existing.customerId };
   const [created] = await db
@@ -113,24 +113,24 @@ async function ensureAccount(customerId: string, phone: string): Promise<{ accou
   return { accountId: created.id, customerId: created.customerId };
 }
 
-export async function requestOtp(phone: string, quoteId: string): Promise<{ devCode?: string }> {
+export async function requestOtp(phone: number, quoteId: string): Promise<{ devCode?: string }> {
   await quoteForPhone(quoteId, phone);
   return issueCode(phone);
 }
 
-export async function requestSignInOtp(phone: string): Promise<{ devCode?: string }> {
+export async function requestSignInOtp(phone: number): Promise<{ devCode?: string }> {
   const customer = await customerByPhone(phone);
   if (!customer) throw new ServiceError(400, "Submit an inquiry before signing in.");
   return issueCode(phone);
 }
 
-export async function verifyOtp(phone: string, quoteId: string, code: string): Promise<{ accountId: string; customerId: string }> {
+export async function verifyOtp(phone: number, quoteId: string, code: string): Promise<{ accountId: string; customerId: string }> {
   const linked = await quoteForPhone(quoteId, phone);
   await consumeCode(phone, code);
   return ensureAccount(linked.customer.id, phone);
 }
 
-export async function verifySignInOtp(phone: string, code: string): Promise<{ accountId: string; customerId: string }> {
+export async function verifySignInOtp(phone: number, code: string): Promise<{ accountId: string; customerId: string }> {
   const customer = await customerByPhone(phone);
   if (!customer) throw new ServiceError(400, "Submit an inquiry before signing in.");
   await consumeCode(phone, code);
