@@ -14,7 +14,6 @@ import { featureRoutes } from "./feature-registry";
 export const AppShell: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const apiMode = import.meta.env.VITE_API_MODE ?? "real";
   const visibleFeatures = featureRoutes.filter(
     (feature) => user && feature.showInNav !== false && feature.roles.includes(user.role)
   );
@@ -51,7 +50,6 @@ export const AppShell: React.FC = () => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3, 12px)" }}>
-          <Badge variant={apiMode === "mock" ? "warning" : "success"}>{apiMode} mode</Badge>
           <span style={{ fontSize: "var(--text-sm, 13px)", color: "var(--text-muted)" }}>{user.fullName}</span>
           <Badge variant="neutral">{user.role}</Badge>
           <Button

@@ -6,15 +6,10 @@ import { Button } from "../../../components/ui/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { SkeletonRows } from "../../../components/ui/Skeleton";
 import { listEnquiries } from "../../enquiries/enquiries.api";
-import { listOrders } from "../../orders/orders.api";
 import { listQuotes } from "../../quotes/quotes.api";
-import { listJobMargins, listServiceTickets } from "../../reports/reports.api";
-import {
-  calendarMonthInIndia,
-  countOpenTickets,
-  formatInr,
-  isUnfinished
-} from "../../reports/status";
+import { listServiceTickets } from "../../reports/reports.api";
+import { countOpenTickets } from "../../reports/status";
+import { DirectorDashboard } from "../components/DirectorDashboard";
 
 interface Tile {
   label: string;
@@ -22,7 +17,18 @@ interface Tile {
   href: string;
 }
 
+/** Non-admin roles keep the compact role tiles; admin gets the director overview. */
 export const DashboardPage: React.FC = () => {
+  const { user } = useAuth();
+
+  if (user?.role === "admin") {
+    return <DirectorDashboard />;
+  }
+
+  return <RoleDashboard />;
+};
+
+const RoleDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -38,105 +44,67 @@ export const DashboardPage: React.FC = () => {
     const role = user.role;
 
     const request =
-      role === "admin"
-        ? Promise.all([listOrders(), listServiceTickets(), listJobMargins()]).then(([orders, tickets, margins]) => {
-            const unfinished = orders.data.filter((item) => isUnfinished(item.status)).length;
-            const openTickets = countOpenTickets(tickets.data.map((item) => item.status));
-            const month = calendarMonthInIndia();
-            const monthMargin = margins.data
-              .filter(
-                (item) =>
-                  item.status === "completed" &&
-                  item.completedAt &&
-                  calendarMonthInIndia(new Date(item.completedAt)) === month
-              )
-              .reduce((sum, item) => sum + item.grossMarginInr, 0);
+      role === "technician"
+        ? Promise.all([listEnquiries()]).then(([enquiries]) => {
+            const open = enquiries.data.filter((item) => item.status !== "won" && item.status !== "lost").length;
+            const surveys = enquiries.data.filter((item) => item.status === "survey_scheduled").length;
             setTiles([
               {
-                label: "Unfinished jobs",
-                value: unfinished === 0 ? "None" : String(unfinished),
-                href: "/app/orders"
+                label: "Surveys scheduled",
+                value: surveys === 0 ? "None" : String(surveys),
+                href: "/app/enquiries"
               },
               {
-                label: "Open tickets",
-                value: openTickets === 0 ? "None" : String(openTickets),
-                href: "/app/reports"
-              },
-              {
-                label: "Gross margin this month",
-                value: monthMargin === 0 ? "None" : formatInr(monthMargin),
-                href: "/app/reports"
+                label: "Open enquiries",
+                value: open === 0 ? "None" : String(open),
+                href: "/app/enquiries"
               }
             ]);
-            setPrimaryAction({ label: "Open reports", href: "/app/reports" });
+            setPrimaryAction({ label: "Open my job", href: "/app/enquiries" });
           })
-        : Promise.all([listEnquiries(), listQuotes()]).then(([enquiries, quotes]) => {
-            const open = enquiries.data.filter((item) => item.status !== "won" && item.status !== "lost").length;
-            const fresh = enquiries.data.filter((item) => item.status === "new").length;
-            const waiting = quotes.data.filter((item) => item.status === "sent").length;
-            const surveys = enquiries.data.filter((item) => item.status === "survey_scheduled").length;
-
-            if (role === "technician") {
-              setTiles([
-                {
-                  label: "Surveys scheduled",
-                  value: surveys === 0 ? "None" : String(surveys),
-                  href: "/app/enquiries"
-                },
-                {
-                  label: "Open enquiries",
-                  value: open === 0 ? "None" : String(open),
-                  href: "/app/enquiries"
-                }
-              ]);
-              setPrimaryAction({ label: "Open my job", href: "/app/enquiries" });
-              return;
-            }
-
-            if (role === "warehouse") {
+        : role === "warehouse"
+          ? Promise.resolve().then(() => {
               setTiles([
                 { label: "Orders to pack", value: "Open warehouse", href: "/app/warehouse" },
                 { label: "Dispatches", value: "Open warehouse", href: "/app/warehouse" }
               ]);
               setPrimaryAction({ label: "Pack next order", href: "/app/warehouse" });
-              return;
-            }
-
-            if (role === "support") {
-              return listServiceTickets().then((tickets) => {
+            })
+          : role === "support"
+            ? listServiceTickets().then((tickets) => {
                 const openTickets = countOpenTickets(tickets.data.map((item) => item.status));
                 setTiles([
                   {
                     label: "Open tickets",
                     value: openTickets === 0 ? "None" : String(openTickets),
                     href: "/app/dashboard"
-                  },
-                  { label: "Under warranty", value: "None", href: "/app/dashboard" },
-                  { label: "Billable repairs", value: "None", href: "/app/dashboard" }
+                  }
                 ]);
                 setPrimaryAction(null);
+              })
+            : Promise.all([listEnquiries(), listQuotes()]).then(([enquiries, quotes]) => {
+                const fresh = enquiries.data.filter((item) => item.status === "new").length;
+                const waiting = quotes.data.filter((item) => item.status === "sent").length;
+                const surveys = enquiries.data.filter((item) => item.status === "survey_scheduled").length;
+                setTiles([
+                  {
+                    label: "New enquiries",
+                    value: fresh === 0 ? "None" : String(fresh),
+                    href: "/app/enquiries"
+                  },
+                  {
+                    label: "Quotes waiting",
+                    value: waiting === 0 ? "None" : String(waiting),
+                    href: "/app/quotes"
+                  },
+                  {
+                    label: "Surveys scheduled",
+                    value: surveys === 0 ? "None" : String(surveys),
+                    href: "/app/enquiries"
+                  }
+                ]);
+                setPrimaryAction({ label: "New enquiry", href: "/app/enquiries" });
               });
-            }
-
-            setTiles([
-              {
-                label: "New enquiries",
-                value: fresh === 0 ? "None" : String(fresh),
-                href: "/app/enquiries"
-              },
-              {
-                label: "Quotes waiting",
-                value: waiting === 0 ? "None" : String(waiting),
-                href: "/app/quotes"
-              },
-              {
-                label: "Surveys scheduled",
-                value: surveys === 0 ? "None" : String(surveys),
-                href: "/app/enquiries"
-              }
-            ]);
-            setPrimaryAction({ label: "New enquiry", href: "/app/enquiries" });
-          });
 
     request
       .catch((err: unknown) => {
