@@ -1,279 +1,383 @@
-# HackCore UI Design System (Odoo theme)
+---
+name: SunPower dual-surface
+description: Staff HackCore ops theme plus Multiplane Cel Dawn public landing
+colors:
+  staff-page: "#fafafa"
+  staff-card: "#fffdf8"
+  staff-section: "#ffffff"
+  staff-line: "#d9d0c1"
+  staff-line-strong: "#b8ad9a"
+  staff-ink: "#2b2430"
+  staff-ink-muted: "#6b6372"
+  staff-brand: "#714b67"
+  staff-brand-hover: "#5c3c54"
+  staff-brand-press: "#4a3044"
+  staff-brand-tint: "#f1e7ee"
+  staff-on-brand: "#fffdf8"
+  staff-accent: "#017e84"
+  staff-accent-text: "#01666b"
+  staff-accent-tint: "#dff1f1"
+  staff-success: "#10b981"
+  staff-success-bg: "#dcfce7"
+  staff-success-text: "#14532d"
+  staff-warning: "#f59e0b"
+  staff-warning-bg: "#fef9c3"
+  staff-warning-text: "#713f12"
+  staff-danger: "#f43f5e"
+  staff-danger-bg: "#fee2e2"
+  staff-danger-text: "#7f1d1d"
+  landing-haze: "#f7f4ec"
+  landing-sheet: "#fffdf8"
+  landing-mist: "#d9e4ea"
+  landing-fern: "#6b8f71"
+  landing-fern-deep: "#3f5a45"
+  landing-pine: "#1e3a2e"
+  landing-ink: "#2b2430"
+  landing-muted: "#5a5160"
+  landing-lamp: "#c4a35a"
+  landing-lamp-hot: "#f2b24a"
+typography:
+  staff-body:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 400
+    lineHeight: 1.5
+  staff-title:
+    fontFamily: "Inter, system-ui, sans-serif"
+    fontSize: "22px"
+    fontWeight: 600
+    lineHeight: 1.25
+  staff-mono:
+    fontFamily: "JetBrains Mono, ui-monospace, monospace"
+    fontSize: "15px"
+    fontWeight: 400
+  landing-display:
+    fontFamily: "Spectral, Times New Roman, serif"
+    fontSize: "clamp(40px, 6vw, 64px)"
+    fontWeight: 700
+    lineHeight: 1.02
+    letterSpacing: "-0.02em"
+  landing-headline:
+    fontFamily: "Spectral, Times New Roman, serif"
+    fontSize: "clamp(28px, 3.5vw, 36px)"
+    fontWeight: 700
+    letterSpacing: "-0.02em"
+  landing-body:
+    fontFamily: "Manrope, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 500
+    lineHeight: 1.5
+  landing-label:
+    fontFamily: "Manrope, system-ui, sans-serif"
+    fontSize: "12px"
+    fontWeight: 700
+    letterSpacing: "0.06em"
+rounded:
+  staff-btn: "4px"
+  staff-input: "4px"
+  staff-card: "6px"
+  staff-badge: "999px"
+  landing-sharp: "0px"
+spacing:
+  staff-gutter: "16px"
+  staff-space-2: "8px"
+  staff-space-3: "12px"
+  staff-space-4: "16px"
+  landing-gutter: "clamp(20px, 4vw, 48px)"
+  landing-section-y: "clamp(40px, 6vw, 72px)"
+components:
+  staff-button-primary:
+    backgroundColor: "{colors.staff-brand}"
+    textColor: "{colors.staff-on-brand}"
+    rounded: "{rounded.staff-btn}"
+    padding: "9px 16px"
+    typography: "{typography.staff-body}"
+  staff-button-primary-hover:
+    backgroundColor: "{colors.staff-brand-hover}"
+    textColor: "{colors.staff-on-brand}"
+  landing-lamp:
+    backgroundColor: "{colors.landing-lamp-hot}"
+    textColor: "{colors.landing-ink}"
+    rounded: "{rounded.landing-sharp}"
+    padding: "16px 22px"
+    typography: "{typography.landing-body}"
+  landing-lamp-hover:
+    backgroundColor: "{colors.landing-lamp}"
+    textColor: "{colors.landing-ink}"
+---
 
-Single source of truth for `apps/frontend` visual language. **This document is the contract.** Tokens live in `src/styles/tokens.css`; shared components live in `src/components/ui/`. Do not invent one-off styles in feature pages.
+# Design System: SunPower (dual surface)
 
-## 1. Philosophy: flat, warm, full-width Odoo
+## Overview
 
-HackCore looks like a modern Odoo back-office: warm off-white surfaces, muted plum actions, teal links, tinted pill badges, and lists that run edge to edge.
+**Creative North Star: "Two doors, two worlds"**
 
-| Rule | What it means |
-| --- | --- |
-| **Full-bleed** | The shell and every list use the whole browser width. No max-width wrapper and no floating card around a page. |
-| **Flat** | Elevation is a 1px hairline border. No shadows. |
-| **Warm** | Beige and off-white surfaces, never pure white or cool slate. |
-| **Quiet colour** | Plum for actions, teal for links and info, status colours only for status. |
+SunPower ships two visual surfaces that must never be mixed casually. Staff and auth live in **HackCore** — a flat, warm Odoo-style back office of beige canvas, muted plum actions, and teal links. The public route `/` lives in **Multiplane Cel Dawn** — an off-white dawn haze cel with painted plane plates, Spectral title-card type, Manrope nearest-plane UI, and a lamp-amber Book consultation window as the only warm light.
 
-**No gradients. No emoji in the DOM.** Solid fills only. Error, success, and warning use the semantic tokens in section 2.
+**Surface A — Staff / ops / auth** (`/app`, login, signup, pipeline screens). Tokens: `src/styles/tokens.css`. Shared UI: `src/components/ui/`. Flat hairlines, no shadows, no CSS gradients, no emoji in the DOM. Plum is the action colour; teal is links and focus; status colours are only for status.
+
+**Surface B — Public landing** (`/`). Styles scoped under `.landing-page` in `src/features/landing/landing.css`. Painted multiplane plates in `public/landing/planes/`, hero photograph `public/landing/hero-bg.jpg`, pine footer, mobile sticky bottom bar. Landing tokens are `--lp-*` locals on `.landing-page` — they do not rewrite `:root` HackCore tokens.
+
+**The Two-Surface Rule.** Staff chrome (plum buttons, Inter UI, flat no-shadow) never appears as the marketing look on `/`. Landing lamp amber, Spectral display, fern/pine accents, and plane plates never become the staff app theme. Auth and ops stay HackCore.
+
+**Key Characteristics:**
+
+- Dual surface: HackCore for work; Multiplane Cel Dawn for persuade
+- Staff: full-bleed lists, 1px hairlines, plum primary, teal focus
+- Landing: dawn haze ground, layered painted planes, lamp CTA, pine footer
+- Shared product truth (live packages API, survey-before-quote) — not shared chrome
+- No emoji in either surface's rendered UI
 
 ---
 
-## 2. Colours: how to change them
+## Colors
 
-Two steps. Everything lives in `src/styles/tokens.css`.
+### Staff / ops (HackCore)
 
-1. **Palette (section A):** raw hex codes, grouped by colour family. Change a hex code here and every screen updates. This is the only place hex codes live.
-2. **Meaning (section B):** what each colour is used for. Screens use these names. Change a name's target here to repoint a use, for example make all buttons teal.
+Quiet warm beige with one plum action voice and teal for navigation of attention (links, focus, info). Change hex only in `tokens.css` palette section A; screens use meaning tokens in section B.
 
-### What each colour is for (plain language)
+#### Primary (plum brand)
 
-| Group | Name in code | What it colours |
-| --- | --- | --- |
-| **Page** | `--page` | Whole background |
-| **Surfaces** | `--card` | Cards, table body, inputs, dialogs |
-| | `--section` | Table header, summary boxes, hover on nav |
-| | `--line` / `--line-strong` | Thin dividers / input and secondary button borders |
-| **Text** | `--text` | Headings and main text |
-| | `--text-muted` | Subtitles, helper text, secondary table text |
-| **Brand (plum)** | `--brand` | Main buttons, logo, active tab underline |
-| | `--brand-hover` / `--brand-press` | Same button when hovered / pressed |
-| | `--brand-tint` / `--brand-line` | Light plum tiles and borders |
-| | `--on-brand` | Text on plum buttons |
-| **Accent (teal)** | `--accent` | Focus ring (keyboard outline) |
-| | `--accent-text` | Links and info text |
-| | `--accent-tint` / `--accent-line` | Info badges and tiles |
-| **Success (green)** | `--success`, `--success-bg`, `--success-text`, `--success-line` | Active, paid, approved |
-| **Warning (amber)** | `--warning`, `--warning-bg`, `--warning-text`, `--warning-line` | Pending, mock mode |
-| **Danger (rose)** | `--danger`, `--danger-bg`, `--danger-text`, `--danger-line`, `--on-danger` | Errors, rejected, delete buttons |
-| **Neutral (grey-beige)** | `--neutral-bg`, `--neutral-text`, `--neutral-line` | Idle or unknown status |
+- **Muted Plum** (`#714b67` / `--brand`): main buttons, logo emphasis, active tab underline.
+- **Plum Hover / Press** (`#5c3c54` / `#4a3044`): darker button states.
+- **Plum Tint / Line** (`#f1e7ee` / `#c9aebf`): light plum tiles and borders.
+- **On Brand** (`#fffdf8`): text on plum fills.
 
-Pattern for status groups: plain name = strong colour, `-bg` = background, `-text` = text on the background, `-line` = border.
+#### Secondary (teal accent)
 
-### Palette (section A)
+- **Ops Teal** (`#017e84` / `--accent`): focus ring.
+- **Teal Text** (`#01666b`): links and info copy.
+- **Teal Tint / Line** (`#dff1f1` / `#8fcfd1`): info badges and tiles.
 
-| Family | Names | Used for |
-| --- | --- | --- |
-| Beige | `--beige-0` to `--beige-4` | White-ish cards, page, section, lines |
-| Ink | `--ink-1`, `--ink-2` | Main text, secondary text |
-| Plum | `--plum-1` to `--plum-5` | Brand buttons and tints |
-| Teal | `--teal-1` to `--teal-4` | Accent, links, focus |
-| Green | `--green-1` to `--green-4` | Success |
-| Amber | `--amber-1` to `--amber-4` | Warning |
-| Rose | `--rose-1` to `--rose-4` | Danger |
-| White | `--white` | Text on danger buttons |
+#### Status (staff only)
 
-### Rules that do not change
+| State | Accent | Surface | Text | Border |
+| --- | --- | --- | --- | --- |
+| Success | `#10b981` | `#dcfce7` | `#14532d` | `#86efac` |
+| Warning | `#f59e0b` | `#fef9c3` | `#713f12` | `#fde047` |
+| Danger | `#f43f5e` | `#fee2e2` | `#7f1d1d` | `#fca5a5` |
 
-- Plum is never a status colour. Teal is never a status colour.
-- No gradients, no shadows, no emoji.
-- Do not use the blue, red or green of other palettes (for example `#2563eb`).
+#### Neutral (staff)
 
-## 3. Typography
+- **Page canvas** (`#fafafa` / `--page`): whole background.
+- **Surface** (`#fffdf8` / `--card`): cards, table body, inputs, dialogs.
+- **Section** (`#ffffff` / `--section`): table headers, summary boxes, nav hover.
+- **Hairline / Strong line** (`#d9d0c1` / `#b8ad9a`).
+- **Ink / Muted** (`#2b2430` / `#6b6372`).
 
-Loaded via Google Fonts in `index.html`.
+**The Plum-Is-Not-Status Rule.** Plum and teal never mean success, warning, or error on staff screens.
 
-| Role | Family | Token |
-| --- | --- | --- |
-| UI, headings, forms, tables | **Inter** | `--font-sans` |
-| IDs, money, clock times, technical metadata | **JetBrains Mono** + `tabular-nums` | `--font-mono` |
+**The No-Gradient Staff Rule.** No `linear-gradient`, `radial-gradient`, `conic-gradient`, Tailwind gradient utilities, or shine/mesh overlays on staff, auth, or ops UI.
 
-| Token | Size | Usage |
-| --- | ---: | --- |
-| `--text-xs` | 12px | Badges, technical metadata |
-| `--text-sm` | 13px | Helper text, table headers, small buttons |
-| `--text-base` | 15px | Body, inputs, table cells |
-| `--text-lg` | 18px | Brand name, card headings |
-| `--text-xl` | 22px | Page title in the control panel |
-| `--text-2xl` | 28px | Large numbers only |
+### Public landing (Multiplane Cel Dawn)
 
-Buttons: 14px, weight 600. Labels: 14px, weight 500. Table headers: 13px, weight 600, sentence case (not uppercase). Mono is only for IDs, currency, and timestamps.
+Off-white dawn ground with fern/pine vegetation tones and a single lamp-amber lit control. Defined as `--lp-*` on `.landing-page`.
+
+#### Primary (lamp)
+
+- **Lamp Hot** (`#f2b24a` / `--lp-lamp-hot`): default Book consultation fill — the lit window.
+- **Lamp** (`#c4a35a` / `--lp-lamp`): hover fill; selection highlight; hero “Zero Investment” underline wash (`inset` lamp hit).
+
+#### Secondary (fern / pine)
+
+- **Fern** (`#6b8f71`): step rules, focus outline on landing.
+- **Fern Deep** (`#3f5a45`): nav links, package CTAs, lamp-hit text.
+- **Pine** (`#1e3a2e`): section titles, lamp border, footer ground, hover deepen.
+
+#### Neutral (landing)
+
+- **Dawn Haze** (`#f7f4ec` / `--lp-haze`): page and haze sections; footer text on pine.
+- **Sheet** (`#fffdf8` / `--lp-sheet`): content sections, peek cards, sticky bar.
+- **Mist** (`#d9e4ea`): table header wash, skeleton pulse tint.
+- **Ink / Muted** (`#2b2430` / `#5a5160`): body and supporting copy.
+- **Plane line** (`rgba(43, 36, 48, 0.16)`): hairline plane and section edges.
+
+**The Lamp Window Rule.** Lamp amber is the only warm fill on the landing. It is reserved for the primary consultation CTA (and the matching hero underline). Do not sprinkle amber across cards or nav.
+
+**The No-Plum-Chrome Rule.** Public `/` does not use staff plum button fills or teal ops chrome. Fern/pine carry navigation and structure; lamp carries the booking action.
 
 ---
 
-## 4. Elevation, radius, borders
+## Typography
 
-- **No shadows.** Separation comes from borders and background steps (canvas to surface).
-- Hairline: `--border-default` (`1px solid #d9d0c1`). Input and secondary-button border: `--border-strong`.
-- Radius: buttons and inputs `4px` (`--radius-btn`, `--radius-input`), cards and tiles `6px` (`--radius-card`), badges pill (`--radius-badge`).
-- Transition: `--transition-fast` (background, border, and colour, 0.12s).
-- Focus: `2px solid --accent` with 1px offset. Never remove it.
+### Staff / ops
+
+**Display / UI Font:** Inter (`--font-sans`)  
+**Mono Font:** JetBrains Mono + `tabular-nums` (`--font-mono`)
+
+**Character:** Dense, operational, sentence-case UI. No display serif in the back office.
+
+#### Hierarchy (staff)
+
+- **Page title** (600, 22px / `--text-xl`): control panel titles.
+- **Brand / card heading** (600–700, 18px / `--text-lg`): navbar brand, card titles.
+- **Body** (400, 15px / `--text-base`): inputs, table cells, copy.
+- **Label / button** (500–600, 14px): form labels; buttons at 14px / 600.
+- **Helper / table header** (600 for headers, 13px / `--text-sm`): sentence case, not uppercase.
+- **Tech / badge** (600, 12px / `--text-xs`): badges, metadata.
+- **Mono** (IDs, money, clock times only).
+
+### Public landing
+
+**Display Font:** Spectral 600/700 (`--lp-font-display`)  
+**Body Font:** Manrope 500/600/700 (`--lp-font-body`)  
+**Mono Font:** JetBrains Mono (`--lp-font-mono`) for package codes and INR
+
+**Character:** Title-card serif for the offer; nearest-plane sans for nav, body, and the lamp label. Marketing voice stays on Spectral+Manrope; staff Inter never styles the landing hero.
+
+#### Hierarchy (landing)
+
+- **Display** (700, `clamp(40px, 6vw, 64px)`, line-height 1.02): hero “Go Solar at / Zero Investment”.
+- **Headline** (700, `clamp(28px, 3.5vw, 36px)`, pine): section `h2`.
+- **Title** (700, 18px Spectral): step `h3`.
+- **Body** (500–700, 15–16px Manrope): ledes, nav, footer links.
+- **Label** (700, 12px, 0.06–0.08em, uppercase): table headers, step labels, footer column titles.
+- **Mono** (600, tabular): package codes, kW, INR.
+
+**The Title-Card Rule.** Spectral is for hero and section display only on the landing. Controls, nav, and lamp CTA stay Manrope.
 
 ---
 
-## 5. Spacing
+## Layout
 
-- **Page gutter:** `--layout-gutter` (16px) is the left and right inset for the navbar, control panel, KPI row, and the first and last table cells.
-- Control panel: `12px 16px` padding. KPI row: `16px` vertical.
-- Table cells: `10px 12px`.
-- Button `md`: `9px 16px`. `sm`: `5px 12px`.
-- Badge: `2px 10px`.
-- Control gap (icon and label): `8px`.
+### Staff / ops
 
----
-
-## 6. Layout: how the page fills the width
-
-This section fixes the "box does not cover the page" problem. The cause was a width-limited, bordered card wrapped around every page. The rule now is:
+Full-bleed Odoo shell. `AppShell` has no max-width and no outer card. `main` is `width: 100%`.
 
 ```
-Navbar            full width, canvas background, 1px bottom border
-Control panel     full width, title left, actions right, 1px bottom border
-KPI row           padded with the gutter, tinted tiles (optional)
-List / table      full width, surface background, 1px top and bottom border only
+Navbar            full width, canvas, 1px bottom border
+Control panel     full width, title left, actions right
+KPI row           gutter-padded tinted tiles (optional)
+List / table      full width surface, top/bottom hairlines only
 ```
 
-Rules:
+- **Gutter:** `--layout-gutter` (16px) on navbar, control panel, KPI row, and first/last table cells.
+- Feature pages are plain `div`s — no outer page padding; each band applies the gutter.
+- **Tables are edge to edge** — no rounded outer frame.
+- **Forms and auth cards only** are width-limited (`--auth-card-width` 440px; wide 560px). Auth page chrome stays full-bleed.
 
-1. `AppShell` has **no `max-width`, no margin, no outer card**. `main` is `width: 100%`.
-2. A feature page is a plain `div`. It never adds its own outer padding. Each band (control panel, KPI row, table) applies `--layout-gutter` itself.
-3. **Tables are edge to edge.** No outer border, no rounded frame. The section around the table has a top and bottom hairline. First and last cells align to the gutter.
-4. **Forms and auth cards are the only width-limited elements**, because a form should not stretch. Auth: `--auth-card-width` (440px), signup: `--auth-card-width-wide` (560px). Their page header, background, and footer are still full-bleed.
-5. Detail pages follow the same pattern: control panel on top, then full-width sections. Use a two-column grid inside a section when the content needs it.
+### Public landing
 
----
+Scoped to `.landing-page`: column flex, `min-height: 100vh`, haze ground.
 
-## 7. Component contracts
+- **Gutter:** `--lp-gutter` = `clamp(20px, 4vw, 48px)`.
+- **Hero:** multiplane stack + cel; `min-height: min(92vh, 860px)`; copy max-width ~36rem left; planes fill the frame.
+- **Sections:** sheet or haze bands with section padding `clamp(40px, 6vw, 72px)` vertical; 1px bottom plane line.
+- **Packages:** full-width table on sheet; below 900px becomes stacked labeled rows (thead hidden).
+- **Steps:** 3-column grid → 1 column below 900px.
+- **Footer:** pine full-bleed; 3-column grid → 1 column below 900px.
+- **Mobile sticky bar:** shown at `max-width: 900px`; Packages / Steps / lamp CTA.
 
-### Button (`components/ui/Button.tsx`, styles in `tokens.css`)
-
-- Variants: `primary` (plum fill, off-white text), `secondary` (surface fill, strong border, ink text), `outline` (transparent, plum border and text), `danger` (`--danger` fill, white text).
-- Sizes: `sm` | `md`. Flat, 4px radius, weight 600, 8px gap. Hover darkens, disabled is 55% opacity.
-- **Placement:** create actions in the control panel (right side). State-changing actions in a footer row under the data they act on. Destructive actions are separated, use `danger`, and ask for confirmation.
-
-### Badge
-
-- Variants: `success` | `warning` | `danger` | `info` | `neutral`.
-- Tinted pill: 1px semantic border, surface fill, text-on-surface colour, 12px, weight 600, capitalised. Not uppercase.
-- Map domain status to a variant. Do not invent a second badge look.
-
-### Input and Select
-
-- Surface fill, `--border-strong`, 4px radius, 15px text, `10px 12px` padding. No inset shadow.
-- Error: 1px `--danger` border plus the helper text in `--danger-text`.
-
-### Tax select (invoice, quotation, and purchase lines)
-
-Use this wherever a line has a **Taxes** field. The user picks from a predefined list. They never type a tax rate by hand.
-
-**Behaviour**
-
-- Closed state: a Select in the line row, placeholder empty, chevron on the right. Same look as Input and Select above.
-- Open state: a flat popover under the field. Surface fill, 1px `--border-default`, 4px radius, no shadow. Options are one per row, 15px text, `10px 12px` padding. Row hover uses `--section`. The selected row shows a check icon in `--accent-text`.
-- Last row is **Search more...** in `--accent-text`. It opens a Dialog with a searchable list of every tax.
-- Keyboard: arrow keys move, Enter selects, Esc closes. Focus ring is the standard 2px `--accent`.
-- Choosing a tax recalculates that line's Amount and the document totals immediately.
-- Single select by default. Multi-select (pills inside the field) only if the brief needs stacked taxes.
-
-**Predefined options (default list)**
-
-| Label | Rate | Notes |
-| --- | ---: | --- |
-| 0% Exempt | 0 | Exempt supply |
-| Nil Rated | 0 | Nil-rated supply |
-| 0% NGST P | 0 | Non-GST purchase |
-| 5% GST P (No ITC) | 5 | CGST + SGST, intra-state |
-| 18% GST P (No ITC) | 18 | CGST + SGST, intra-state |
-| 40% GST P (No ITC) | 40 | CGST + SGST, intra-state |
-| 5% IGST P (No ITC) | 5 | Inter-state |
-| 18% IGST P (No ITC) | 18 | Inter-state |
-
-Sales documents use the same pattern with an `S` suffix (for example `18% GST S`). Show only the taxes that match the document type: purchases show `P`, sales show `S`.
-
-**Where the list comes from**
-
-- The list is reference data in PostgreSQL (`taxes` table, seeded), served by `GET /api/taxes` through `apiClient`. Do not hardcode it inside a component.
-- Mock mode serves the same list from `src/mocks/fixtures/` and a handler, and is listed in `docs/MOCK_INVENTORY.md`.
-- Each tax has `id`, `label`, `rate`, `type` (`gst` | `igst` | `exempt` | `nil`), and `scope` (`purchase` | `sales`).
-- A line stores the tax `id`, not the label, so renaming a label never changes old documents.
-
-### Money input (unit price, amounts)
-
-Use this for **Unit Price**, discounts, and any other currency the user types. The user types plain digits. The field formats them with commas when they leave it.
-
-**Behaviour**
-
-- While typing: accept digits and one decimal point only. Do not insert commas mid-keystroke, so the cursor never jumps.
-- On blur: format with the Indian grouping and two decimals. `100000` becomes `1,00,000.00`. `2500.5` becomes `2,500.50`.
-- On focus: show the raw number again (no commas) so it is easy to edit.
-- Empty stays empty. Never auto-fill `0.00`.
-- Paste: strip commas, spaces, and the currency symbol, then validate.
-- Reject negatives and letters. Show the Input error state and helper text for an invalid value.
-- Submit and store the **plain number** (`100000.5`), never the formatted string. The API receives a number or a decimal string. Format only for display.
-- Display uses `Intl.NumberFormat("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })`. Use one shared helper (`lib/format-money.ts`) for the input and for every read-only amount.
-
-**Look**
-
-- Right-aligned text in `--font-mono` with `tabular-nums`, so decimals line up down the Unit Price and Amount columns.
-- Currency symbol (for example `₹`) is shown on read-only Amount cells and totals, not inside the editable Unit Price field.
-- Totals block (Untaxed, Tax, Total) is right-aligned, mono, with the Total in weight 600.
-
-**Component**
-
-- `components/ui/MoneyInput.tsx` wraps Input. Props: `value` (number or null), `onChange(number | null)`, `currency`, `disabled`, `error`.
-- Feature pages never format money themselves. They call `MoneyInput` and `formatMoney`.
-
-### Table (`components/ui/Table.tsx`, class `.data-table`)
-
-- No outer frame. Header row on `--section` with a strong bottom border. Body rows on surface with hairlines. Row hover uses the page colour.
-- ID, currency, and time columns use `--font-mono` and do not wrap.
-
-### Control panel (`components/ui/PageHeader.tsx`)
-
-- Full-width bar on canvas with a bottom hairline. Title (22px, 600) and optional description on the left, actions on the right.
-
-### Navbar (`AppShell`)
-
-- One bar: brand mark, feature links, then mode badge, user, role badge, sign out.
-- Link: subtle text. Active link: ink text, weight 600, 2px plum underline.
-
-### KPI tile
-
-- Tinted surface (plum, success, or tertiary) with matching 1px border. Value in mono 22px, label in 13px subtle text.
-
-### Alert
-
-- Semantic surface, text, and 1px semantic border. Lucide-style icon in the accent colour. Never emoji.
+**The Cel-First Viewport Rule.** First viewport is brand, one Spectral offer, one supporting sentence, one lamp CTA, and the multiplane image — not a dashboard of equal package cards.
 
 ---
 
-## 8. Libraries
+## Elevation & Depth
 
-| Need | Choice |
-| --- | --- |
-| Icons | `lucide-react` style icons (`components/ui/icons.tsx`) with `strokeWidth` 1.75 or 2 |
-| Complex overlays | Radix unstyled, only when a feature needs them |
-| Simple controls | Native React with these tokens |
-| CSS | CSS custom properties in `tokens.css`. No Tailwind. |
+### Staff / ops
 
-Use icons only for explicit actions or status. No decorative icons in every cell.
+**Flat by default.** Depth is tonal (canvas → surface) plus 1px hairlines. No `box-shadow`. Focus is `2px solid --accent` with 1px offset.
 
----
+### Public landing
 
-## 9. Hard bans
+Depth is **multiplane**, not material shadow UI.
 
-- **Gradients** of any kind: `linear-gradient`, `radial-gradient`, `conic-gradient`, `bg-gradient-*`, `from-` / `via-` / `to-`, shine or mesh overlays.
-- **Emoji in the rendered UI** (JSX, buttons, banners, empty states, table cells, titles). Use icons or Badge text.
-- **Off-palette status colours.** Success, warning, and error use only the semantic table in section 2.
-- **Shadows and thick borders.** The theme is flat.
-- **Second styles.** No separate badge, button, or alert look inside a feature folder.
-- **Fake data.** No hardcoded business rows, no `setTimeout` fake success, no fallback data when an API fails (see `AGENTS.md`).
+- **Far / mid / near planes:** absolute painted plates (`plane-far-mist.png`, `hero-bg.jpg` photo plate, `plane-mid-fern.png`, `plane-near-haze.png`) with scroll-linked `translate3d` drift (far 0.08×, mid 0.18×, near 0.28× scrollY; near haze ×1.25). `prefers-reduced-motion: reduce` disables plane transforms.
+- **Hairline plane edges:** `--lp-line` borders on hero and sections; photo plate has a left hairline.
+- **Lamp treatment (CTA only):** sharp rectangle with pine 1px border plus inset highlight/shade and a thin lamp outer ring — reads as a lit cel window, not a floating card drop shadow. Do not reuse as a general card elevation system.
+- **Peek / table / sticky bar:** sheet fills + 1px lines; peek uses translucent sheet `rgba(255, 253, 248, 0.88)`.
+
+**The Multiplane Rule.** Landing depth comes from layered painted plates and parallax, not from staff-style tonal cards or drop shadows on content blocks.
 
 ---
 
-## 10. Do / don't
+## Shapes
 
-**Do**
+### Staff / ops
 
-- Let every list and control panel run edge to edge.
-- Use plum for the one main action, teal for links, and status tokens for status.
-- Put money, IDs, and times in JetBrains Mono.
-- Pick taxes from the predefined Tax select. Format typed money with `MoneyInput`.
-- Put every colour in `tokens.css` and reference it by variable.
+- Buttons / inputs: 4px (`--radius-btn`, `--radius-input`).
+- Cards / tiles: 6px (`--radius-card`).
+- Badges: pill (`--radius-badge`).
+- Borders: 1px default or strong; never thick frames.
 
-**Don't**
+### Public landing
 
-- Wrap a page in a width-limited bordered card.
-- Add padding around a table that makes it float inside the page.
-- Use plum or teal to mean success, warning, or error.
-- Use pure white or cool slate backgrounds.
-- Let users type a tax rate as free text, or hardcode the tax list in a component.
-- Store a comma-formatted string such as `"1,00,000.00"` in state or send it to the API.
+- **Sharp cel geometry:** lamp CTA, peek items, package table, retry control — `border-radius: 0`.
+- **Step markers:** 1px fern left rules, not numbered discs.
+- **Plane silhouettes:** soft painted edges live in the PNG plates under `public/landing/planes/`, not in CSS radius.
+- Focus: `2px solid --lp-fern`, offset 3px.
+
+---
+
+## Components
+
+### Staff — Button (`components/ui/Button.tsx`)
+
+- **Shape:** 4px radius, flat, weight 600, 8px icon gap.
+- **Primary:** plum fill, on-brand text; hover/press darken.
+- **Secondary / outline / danger:** surface+strong border; plum outline; danger rose fill.
+- **Sizes:** `sm` | `md`. Disabled at 55% opacity.
+- Create actions live in the control panel; destructive actions use `danger` and confirm.
+
+### Staff — Badge, Input, Select, Table, Control panel, Navbar, KPI, Alert
+
+- **Badge:** tinted pill variants `success | warning | danger | info | neutral` — capitalised, not uppercase.
+- **Input / Select:** surface, strong border, 4px, 15px, `10px 12px`; error uses danger border + helper.
+- **Tax select / Money input:** keep the incumbent contracts in feature work (predefined tax list from API; Indian grouping via shared `formatMoney` / `MoneyInput`; mono tabular amounts). Do not hardcode tax rows in components.
+- **Table (`.data-table`):** no outer frame; header on `--section`; row hover uses page colour; mono for ID/money/time.
+- **Control panel:** full-width canvas bar, 22px title, actions right.
+- **Navbar:** brand, feature links, mode/user/role; active link 2px plum underline.
+- **KPI tile:** tinted surface + matching 1px border; mono value.
+- **Alert:** semantic surface/text/border + Lucide-style icon — never emoji.
+
+### Landing — Lamp CTA (`.landing-lamp`)
+
+- **Shape:** sharp rectangle; min-width 240px; min-height 54px; padding `16px 22px`.
+- **Primary:** lamp-hot fill, ink text, 1px pine border, inset highlight + thin lamp ring.
+- **Hover:** lamp fill; ring strengthens. **Active:** `translateY(1px)`.
+- Routes to `/inquire` (“Book consultation” / “Start the survey form” / empty-state booking).
+
+### Landing — Nav & brand
+
+- Brand: logo 28px + Manrope 700 18px, tracking 0.04em.
+- Links: fern-deep 14px / 700; hover pine. “How it works” hides below 900px in the top nav (still in sticky bar as “Steps”).
+
+### Landing — Hero peek & package table
+
+- **Peek:** up to three live packages (code, kind · kW · INR) on translucent sheet tiles; skeleton pulse while loading.
+- **Table:** sheet, 1px line grid, uppercase mist headers; talker line under system name; “Size for my roof” fern-deep text CTA. Mobile: stacked `data-label` rows.
+
+### Landing — Steps, footer, sticky bar
+
+- **Steps:** three left-ruled items; uppercase fern-deep step label; Spectral `h3`.
+- **Footer:** pine ground, haze text, lamp column titles; Explore + Contact columns; bottom bar with copyright.
+- **Sticky bottom bar** (`≤900px`): sheet + top hairline; Packages / Steps text links + compact lamp CTA; safe-area padding.
+
+### Landing — Retry / empty
+
+- Retry: sharp ink-border sheet button. Empty state keeps Spectral heading + lamp CTA to inquire. Errors may reuse staff `Alert` for semantics but sit inside landing chrome.
+
+---
+
+## Do's and Don'ts
+
+### Do
+
+- **Do** treat HackCore (`tokens.css` + `components/ui`) as authoritative for `/app`, auth, and ops.
+- **Do** scope all Multiplane Cel Dawn styling under `.landing-page` / `landing.css`.
+- **Do** keep staff lists and control panels edge to edge; plum for the main staff action; teal for staff links/focus.
+- **Do** put money, IDs, and times in JetBrains Mono on both surfaces where numbers appear.
+- **Do** use Spectral + Manrope + lamp amber + pine/fern only on the public landing.
+- **Do** keep plane depth in `public/landing/planes/` + scroll drift; respect `prefers-reduced-motion`.
+- **Do** send landing CTAs to `/inquire` and load packages from the real public API.
+
+### Don't
+
+- **Don't** apply staff no-gradient / no-shadow / plum rules as a ban on the landing's painted plates or lamp inset ring — and **don't** weaken those bans on staff screens.
+- **Don't** bring plum primary buttons, Inter control-panel chrome, or Odoo table framing onto `/`.
+- **Don't** bring lamp amber, Spectral hero type, or fern multiplane plates into `/app` or auth cards.
+- **Don't** wrap staff pages in a max-width bordered card.
+- **Don't** use emoji in the DOM on either surface.
+- **Don't** invent testimonials, trust stats, or fallback package rows when the API fails.
+- **Don't** use off-palette status blues/reds/greens outside the staff semantic table.
+- **Don't** store comma-formatted money strings in state or hardcode tax lists in components.

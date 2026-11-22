@@ -3,7 +3,11 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { SignupPage } from "../features/auth/pages/SignupPage";
+import { CustomerShell } from "../features/customer-portal/components/CustomerShell";
 import { CustomerJobsPage } from "../features/customer-portal/pages/CustomerJobsPage";
+import { CustomerQuotesListPage } from "../features/customer-portal/pages/CustomerQuotesListPage";
+import { CustomerServicePage } from "../features/customer-portal/pages/CustomerServicePage";
+import { CustomerSupportPage } from "../features/customer-portal/pages/CustomerSupportPage";
 import { CustomerQuotePage } from "../features/customer-quotes/pages/CustomerQuotePage";
 import { InquiryPage } from "../features/landing/pages/InquiryPage";
 import { LandingPage } from "../features/landing/pages/LandingPage";
@@ -57,8 +61,14 @@ export const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/inquire" element={<InquiryPage />} />
-          <Route path="/my/quotes/:quoteId" element={<CustomerQuotePage />} />
-          <Route path="/my/jobs" element={<CustomerJobsPage />} />
+          <Route path="/my" element={<CustomerShell />}>
+            <Route index element={<Navigate to="jobs" replace />} />
+            <Route path="jobs" element={<CustomerJobsPage />} />
+            <Route path="quotes" element={<CustomerQuotesListPage />} />
+            <Route path="quotes/:quoteId" element={<CustomerQuotePage />} />
+            <Route path="service" element={<CustomerServicePage />} />
+            <Route path="support" element={<CustomerSupportPage />} />
+          </Route>
           <Route
             path="/login"
             element={

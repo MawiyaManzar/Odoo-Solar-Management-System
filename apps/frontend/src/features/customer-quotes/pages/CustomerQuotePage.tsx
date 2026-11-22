@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { Alert } from "../../../components/ui/Alert";
 import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
-import { CustomerNav } from "../../customer-portal/components/CustomerNav";
 import { Input } from "../../../components/ui/Input";
 import { Table } from "../../../components/ui/Table";
 import { labelStatus, statusVariant } from "../../enquiries/status";
@@ -79,9 +78,7 @@ export const CustomerQuotePage: React.FC = () => {
   };
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", backgroundColor: "var(--page)" }}>
-      <CustomerNav />
-      <main style={{ width: "min(720px, 100%)", margin: "0 auto", padding: "24px var(--layout-gutter) 40px", display: "flex", flexDirection: "column", gap: "12px" }}>
+    <main style={{ width: "min(720px, 100%)", padding: "24px var(--layout-gutter) 40px", display: "flex", flexDirection: "column", gap: "12px" }}>
         <h1 style={{ margin: 0, fontSize: "var(--text-xl, 22px)" }}>Your quote</h1>
         {error && <Alert variant="danger" title="Request failed">{error}</Alert>}
         {info && <Alert variant="neutral" title="Next step">{info}</Alert>}
@@ -122,7 +119,6 @@ export const CustomerQuotePage: React.FC = () => {
             )}
           </>
         )}
-      </main>
-    </div>
+    </main>
   );
 };

@@ -30,7 +30,11 @@
 | Customer quote | `GET /api/customer/quotes/:id`, `POST .../accept`, `POST .../reject` | same | `REAL API VERIFIED` | Owner only. A customer token on staff routes returns 403 |
 | Customer sign-in | `POST /api/customer-auth/sign-in/otp`, `POST .../verify` | same | `REAL API VERIFIED` | Unknown phone is told to submit an inquiry |
 | Customer orders | `GET /api/customer/orders` | same | `REAL API VERIFIED` | Payments, dispatch, serials, warranty |
-| Customer payment | `POST /api/customer/orders/:id/payments` | same | `REAL API VERIFIED` | Customer UPI amount + UTR. Same 30% gate |
+| Customer Stripe checkout | `POST /api/customer/orders/:id/checkout` | same | `REAL API IMPLEMENTED` | Creates Stripe Checkout Session (test keys) |
+| Customer Stripe confirm | `POST /api/customer/orders/:id/payments/confirm` | same | `REAL API IMPLEMENTED` | Records `method: stripe` after paid session; same 30% gate |
+| Customer quotes list | `GET /api/customer/quotes` | same | `REAL API IMPLEMENTED` | Portal UI; sent/accepted/rejected/expired |
+| Customer support ask | `POST /api/customer/support/ask` | same | `REAL API IMPLEMENTED` | Rule-based bot; no chat table |
+| Customer service tickets | `GET/POST /api/customer/service-tickets` | same | `REAL API IMPLEMENTED` | Own tickets; delivered serials only |
 | Orders | `GET/POST /api/orders`, `GET/PATCH /api/orders/:id`, `POST .../schedule` | same | `REAL API VERIFIED` | No MSW handler. 30% payment gate. Schedule assigns lead technician |
 | Payments | `GET/POST /api/orders/:id/payments` | same | `REAL API VERIFIED` | Staff records UPI, NEFT, cash, or cheque |
 | Stock | `GET /api/stock`, `PATCH /api/stock/:productId` | same | `REAL API VERIFIED` | Write: warehouse, admin |

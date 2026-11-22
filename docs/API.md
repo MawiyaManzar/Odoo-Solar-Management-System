@@ -208,9 +208,13 @@ Homeowners are not staff users. A `customer_accounts` row is created on the firs
 | :--- | :--- | :--- | :--- |
 | POST | `/api/customer-auth/otp` | public | `{ phone, quoteId }` · phone must match the quote’s customer · quote must be `sent`, `accepted`, or `rejected` · 6-digit code, 10 minutes, 5 attempts |
 | POST | `/api/customer-auth/verify` | public | `{ phone, quoteId, code }` → `{ token, customerId }` |
+| GET | `/api/customer/quotes` | that customer | List viewable quotes (`sent`, `accepted`, `rejected`, `expired`) |
 | GET | `/api/customer/quotes/:id` | that customer | lines and totals |
 | POST | `/api/customer/quotes/:id/accept` | that customer | `sent` only · same order + `won` effect as staff accept |
 | POST | `/api/customer/quotes/:id/reject` | that customer | `sent` only · enquiry → `lost` |
+| POST | `/api/customer/support/ask` | that customer | `{ question }` → `{ answer, topic }` rule-based from live orders/quotes |
+| GET | `/api/customer/service-tickets` | that customer | Own tickets |
+| POST | `/api/customer/service-tickets` | that customer | `{ serialUnitId, faultCode?, description, billableInr? }` · delivered serials only |
 
 When `NODE_ENV` is not `production`, the OTP response includes `devCode` and the server logs the code. Production omits `devCode`. Wrong phone on a quote: `400` “Use the mobile number from your inquiry.”
 
@@ -221,6 +225,8 @@ Sign-in without a quote (returning customer):
 | POST | `/api/customer-auth/sign-in/otp` | public | `{ phone }` · 400 `Submit an inquiry before signing in.` if the phone is not a customer |
 | POST | `/api/customer-auth/sign-in/verify` | public | `{ phone, code }` → `{ token, customerId }` |
 | GET | `/api/customer/orders` | that customer | Own orders with `payments`, `dispatches`, and `serials` (`warrantyEndsAt`, `underWarranty`). Staff token → 403 |
+| POST | `/api/customer/orders/:id/checkout` | that customer | `{ amountInr }` → `{ sessionId, url }` Stripe Checkout · another customer’s order is 404 |
+| POST | `/api/customer/orders/:id/payments/confirm` | that customer | `{ sessionId }` · records `method: stripe` after paid session · same 30% gate · idempotent on session id |
 | POST | `/api/customer/orders/:id/payments` | that customer | `{ amountInr, kind, reference }` · method is `upi` · same 30% gate as staff payments · another customer’s order is 404 |
 
 ---

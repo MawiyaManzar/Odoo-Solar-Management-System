@@ -1,0 +1,291 @@
+/* SunPower install-pipeline stageshow — scoped to this demo */
+
+.sp-pipe .ss-stage {
+  --sp-ease: cubic-bezier(0.45, 0, 0.1, 1);
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f7f4ec;
+  border: 1px solid rgba(43, 36, 48, 0.14);
+  font: 12.5px/1.4 var(--ss-font);
+  color: var(--ss-text-strong);
+}
+
+.sp-pipe-wash {
+  position: absolute;
+  inset: 0;
+  background: #eef2f0;
+  opacity: 0.7;
+}
+
+.sp-pipe-win {
+  position: absolute;
+  top: 28px;
+  left: 48px;
+  width: 820px;
+  height: 360px;
+  box-shadow: var(--ss-shadow-hero);
+}
+
+.sp-pipe-side {
+  display: grid;
+  gap: 16px;
+  padding: 14px 12px;
+}
+
+.sp-pipe-side__brand {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #1e3a2e;
+}
+
+.sp-pipe-side__nav {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.sp-pipe-side__nav span {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--ss-text-faint);
+}
+
+.sp-pipe-side__nav span[data-on] {
+  color: #1e3a2e;
+}
+
+.sp-pipe-body {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 14px;
+  height: 100%;
+  padding: 16px 18px 14px;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.7s ease, transform 0.9s var(--sp-ease);
+}
+
+.sp-pipe-body[data-in] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sp-pipe-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sp-pipe-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.sp-pipe-badge {
+  min-width: 118px;
+  justify-content: center;
+}
+
+.sp-pipe-card {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ss-line);
+  border-radius: 8px;
+  background: var(--ss-raised);
+}
+
+.sp-pipe-card__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sp-pipe-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(107, 143, 113, 0.22);
+  color: #1e3a2e;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.sp-pipe-name {
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.sp-pipe-meta {
+  font-size: 11.5px;
+  color: var(--ss-text);
+}
+
+.sp-pipe-fields {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--ss-line-faint);
+}
+
+.sp-pipe-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 32px;
+  border-bottom: 1px solid var(--ss-line-faint);
+  font-size: 12px;
+}
+
+.sp-pipe-field:last-child {
+  border-bottom: none;
+}
+
+.sp-pipe-muted {
+  color: var(--ss-text);
+}
+
+.sp-pipe-stage {
+  font-weight: 650;
+  color: #1e3a2e;
+}
+
+.sp-pipe-rail {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  align-items: start;
+}
+
+.sp-pipe-rail__item {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  opacity: 0.38;
+  transform: translateY(6px);
+  transition: opacity 0.55s ease, transform 0.7s var(--sp-ease), color 0.4s ease;
+}
+
+.sp-pipe-rail__item[data-active],
+.sp-pipe-rail__item[data-done] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sp-pipe-rail__dot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--ss-line);
+  background: var(--ss-surface);
+  color: var(--ss-text);
+}
+
+.sp-pipe-rail__item[data-active] .sp-pipe-rail__dot {
+  border-color: #c4a35a;
+  background: #f2b24a;
+  color: #2b2430;
+}
+
+.sp-pipe-rail__item[data-done] .sp-pipe-rail__dot {
+  border-color: #3f5a45;
+  background: #6b8f71;
+  color: #fffdf8;
+}
+
+.sp-pipe-rail__num {
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sp-pipe-rail__label {
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.25;
+  max-width: 9.5ch;
+  color: var(--ss-text);
+}
+
+.sp-pipe-rail__item[data-active] .sp-pipe-rail__label,
+.sp-pipe-rail__item[data-done] .sp-pipe-rail__label {
+  color: #1e3a2e;
+}
+
+.sp-pipe-rail__line {
+  position: absolute;
+  top: 10px;
+  left: calc(50% + 14px);
+  width: calc(100% - 28px);
+  height: 1px;
+  background: var(--ss-line);
+}
+
+.sp-pipe-rail__item[data-done] .sp-pipe-rail__line {
+  background: #6b8f71;
+}
+
+.sp-pipe-foot {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: start;
+  min-height: 28px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ss-line);
+  background: var(--ss-well);
+  color: var(--ss-text);
+  font-weight: 650;
+  font-size: 12px;
+  opacity: 0.55;
+  transition: opacity 0.45s ease, background 0.45s ease, border-color 0.45s ease, color 0.45s ease;
+}
+
+.sp-pipe-foot[data-on] {
+  opacity: 1;
+  background: var(--ss-success-soft);
+  border-color: rgba(63, 90, 69, 0.35);
+  color: var(--ss-success-text);
+}
+
+/* Compact phone column */
+.sp-pipe .ss-stage[data-layout="compact"] .sp-pipe-win {
+  top: 16px;
+  left: 10px;
+  width: 338px;
+  height: 488px;
+}
+
+.sp-pipe .ss-stage[data-layout="compact"] .sp-pipe-rail {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.sp-pipe .ss-stage[data-layout="compact"] .sp-pipe-rail__item {
+  grid-template-columns: 22px 1fr;
+  justify-items: start;
+  text-align: left;
+  column-gap: 10px;
+}
+
+.sp-pipe .ss-stage[data-layout="compact"] .sp-pipe-rail__label {
+  max-width: none;
+}
+
+.sp-pipe .ss-stage[data-layout="compact"] .sp-pipe-rail__line {
+  display: none;
+}

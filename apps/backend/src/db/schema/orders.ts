@@ -22,7 +22,7 @@ export type OrderSystemKind = (typeof ORDER_SYSTEM_KINDS)[number];
 export const PAYMENT_KINDS = ["advance", "balance", "full", "service"] as const;
 export type PaymentKind = (typeof PAYMENT_KINDS)[number];
 
-export const PAYMENT_METHODS = ["upi", "neft", "cash", "cheque"] as const;
+export const PAYMENT_METHODS = ["upi", "neft", "cash", "cheque", "stripe"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export const orders = pgTable(
@@ -75,7 +75,7 @@ export const payments = pgTable(
     check("payments_kind_check", sql`${table.kind} in ('advance', 'balance', 'full', 'service')`),
     check(
       "payments_method_check",
-      sql`${table.method} is null or ${table.method} in ('upi', 'neft', 'cash', 'cheque')`
+      sql`${table.method} is null or ${table.method} in ('upi', 'neft', 'cash', 'cheque', 'stripe')`
     )
   ]
 );

@@ -50,7 +50,7 @@ export const paymentBodySchema = z
   .object({
     amountInr: z.number().positive("Amount must be greater than zero.").finite("Amount must be a number."),
     kind: z.enum(PAYMENT_KINDS, { message: "Kind must be advance, balance, full, or service." }),
-    method: z.enum(PAYMENT_METHODS, { message: "Method must be upi, neft, cash, or cheque." }).optional(),
+    method: z.enum(PAYMENT_METHODS, { message: "Method must be upi, neft, cash, cheque, or stripe." }).optional(),
     reference: z.string().trim().min(1, "Reference cannot be blank.").optional()
   })
   .superRefine((value, ctx) => {

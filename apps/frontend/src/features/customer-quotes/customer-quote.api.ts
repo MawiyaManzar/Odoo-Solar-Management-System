@@ -48,15 +48,72 @@ export interface CustomerOrder {
   }[];
 }
 
+export interface CustomerServiceTicket {
+  id: string;
+  orderId: string | null;
+  serialUnitId: string | null;
+  faultCode: string | null;
+  description: string;
+  underWarranty: boolean | null;
+  billableInr: number;
+  status: string;
+  serialNumber: string | null;
+  productName: string | null;
+  createdAt: string;
+}
+
+export interface SupportAskResult {
+  answer: string;
+  topic: string;
+}
+
 export function listCustomerOrders() {
   return apiClient.get<ApiResponse<CustomerOrder[]>>("/customer/orders", { headers: customerAuth() });
 }
 
-export function payCustomerOrder(
-  orderId: string,
-  body: { amountInr: number; kind: "advance" | "balance" | "full"; reference: string }
-) {
-  return apiClient.post<ApiResponse<{ id: string }>>(`/customer/orders/${orderId}/payments`, body, { headers: customerAuth() });
+export function listCustomerQuotes() {
+  return apiClient.get<ApiResponse<QuoteItem[]>>("/customer/quotes", { headers: customerAuth() });
+}
+
+export function listCustomerTickets() {
+  return apiClient.get<ApiResponse<CustomerServiceTicket[]>>("/customer/service-tickets", {
+    headers: customerAuth()
+  });
+}
+
+export function createCustomerTicket(body: {
+  serialUnitId: string;
+  faultCode?: string;
+  description: string;
+  billableInr?: number;
+}) {
+  return apiClient.post<ApiResponse<CustomerServiceTicket>>("/customer/service-tickets", body, {
+    headers: customerAuth()
+  });
+}
+
+export function askCustomerSupport(question: string) {
+  return apiClient.post<ApiResponse<SupportAskResult>>(
+    "/customer/support/ask",
+    { question },
+    { headers: customerAuth() }
+  );
+}
+
+export function startCustomerCheckout(orderId: string, amountInr: number) {
+  return apiClient.post<ApiResponse<{ sessionId: string; url: string }>>(
+    `/customer/orders/${orderId}/checkout`,
+    { amountInr },
+    { headers: customerAuth() }
+  );
+}
+
+export function confirmCustomerCheckout(orderId: string, sessionId: string) {
+  return apiClient.post<ApiResponse<{ id: string }>>(
+    `/customer/orders/${orderId}/payments/confirm`,
+    { sessionId },
+    { headers: customerAuth() }
+  );
 }
 
 export function requestCustomerOtp(phone: string, quoteId: string) {

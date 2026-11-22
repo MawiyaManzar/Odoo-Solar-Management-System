@@ -115,8 +115,6 @@
   /* Font families */
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  /* Landing hero title only — UI elsewhere stays Inter (--font-sans) */
-  --font-hero: 'Montserrat', var(--font-sans);
 
   /* Sizes */
   --text-xs: 12px;     /* badges, technical metadata */

@@ -62,31 +62,75 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout headerLink={{ to: "/signup", label: "Staff sign up" }}>
-      <div style={{ display: "flex", gap: "8px", marginBottom: "1rem" }}>
-        <Button type="button" size="sm" variant={mode === "staff" ? "primary" : "outline"} onClick={() => { setMode("staff"); setError(null); }}>
+    <AuthLayout
+      variant="split"
+      heroImage="/images/solar-login.jpg"
+      headerLink={{ to: "/signup", label: "Staff sign up" }}
+    >
+      <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "staff" ? "primary" : "outline"}
+          onClick={() => {
+            setMode("staff");
+            setError(null);
+          }}
+        >
           Staff sign in
         </Button>
-        <Button type="button" size="sm" variant={mode === "customer" ? "primary" : "outline"} onClick={() => { setMode("customer"); setError(null); }}>
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "customer" ? "primary" : "outline"}
+          onClick={() => {
+            setMode("customer");
+            setError(null);
+          }}
+        >
           Customer sign in
         </Button>
       </div>
       {mode === "staff" ? (
-        <form onSubmit={handleStaff} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form onSubmit={handleStaff} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
           <div>
-            <h2 style={{ margin: "0 0 0.35rem", fontSize: "var(--text-xl, 22px)", fontWeight: 600 }}>Staff sign in</h2>
-            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>Sales, technician, and admin.</p>
+            <h2 style={{ margin: "0 0 0.35rem", fontSize: "var(--text-xl, 22px)", fontWeight: 600, color: "var(--text)" }}>
+              Staff sign in
+            </h2>
+            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
+              Sales, technician, and admin.
+            </p>
           </div>
           {error && <Alert variant="danger" title="Sign in failed">{error}</Alert>}
-          <Input label="Work email" type="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} />
-          <Input label="Password" type="password" required autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-          <Button type="submit" isLoading={isLoading}>Sign in</Button>
+          <Input
+            label="Work email"
+            type="email"
+            required
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <Input
+            label="Password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+          <Button type="submit" isLoading={isLoading}>
+            Sign in
+          </Button>
         </form>
       ) : (
-        <form onSubmit={handleCustomer} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form onSubmit={handleCustomer} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
           <div>
-            <h2 style={{ margin: "0 0 0.35rem", fontSize: "var(--text-xl, 22px)", fontWeight: 600 }}>Customer sign in</h2>
-            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>Use the mobile number from your inquiry.</p>
+            <h2 style={{ margin: "0 0 0.35rem", fontSize: "var(--text-xl, 22px)", fontWeight: 600, color: "var(--text)" }}>
+              Customer sign in
+            </h2>
+            <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
+              Use the mobile number from your inquiry.
+            </p>
           </div>
           {error && (
             <Alert variant="danger" title="Sign in failed">
@@ -96,9 +140,13 @@ export const LoginPage: React.FC = () => {
           )}
           {devCode && <Alert variant="neutral" title="Development code">{devCode}</Alert>}
           <Input label="Mobile number" required value={phone} onChange={(event) => setPhone(event.target.value)} />
-          <Button type="button" variant="secondary" isLoading={isLoading} onClick={() => void requestCode()}>Request code</Button>
+          <Button type="button" variant="secondary" isLoading={isLoading} onClick={() => void requestCode()}>
+            Request code
+          </Button>
           <Input label="Code" required inputMode="numeric" value={code} onChange={(event) => setCode(event.target.value)} />
-          <Button type="submit" isLoading={isLoading}>Sign in</Button>
+          <Button type="submit" isLoading={isLoading}>
+            Sign in
+          </Button>
         </form>
       )}
     </AuthLayout>

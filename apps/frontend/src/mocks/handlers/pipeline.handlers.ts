@@ -54,6 +54,20 @@ type MockCustomerOrder = {
   }[];
 };
 
+const customerTickets: {
+  id: string;
+  orderId: string | null;
+  serialUnitId: string | null;
+  faultCode: string | null;
+  description: string;
+  underWarranty: boolean | null;
+  billableInr: number;
+  status: string;
+  serialNumber: string | null;
+  productName: string | null;
+  createdAt: string;
+}[] = [];
+
 const customerOrders: MockCustomerOrder[] = [
   {
     id: "ord-01",
@@ -356,6 +370,131 @@ export const pipelineHandlers = [
       .filter((row) => row.customerId === customerId)
       .map(({ customerId: _customerId, ...rest }) => rest);
     return HttpResponse.json({ success: true, data });
+  }),
+
+  http.post("/api/customer/orders/:id/checkout", async ({ request, params }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    const customerId = token.replace(/^Bearer customer\./, "");
+    const order = customerOrders.find((row) => row.id === params.id && row.customerId === customerId);
+    if (!order) return HttpResponse.json({ success: false, message: "Order not found." }, { status: 404 });
+    const body = (await request.json()) as { amountInr: number };
+    const sessionId = `cs_test_mock_${params.id}_${Date.now()}`;
+    const url = `/my/jobs?paid=1&order_id=${encodeURIComponent(String(params.id))}&session_id=${encodeURIComponent(sessionId)}&mock_amount=${body.amountInr}`;
+    return HttpResponse.json({ success: true, data: { sessionId, url }, message: "Stripe checkout ready." });
+  }),
+
+  http.post("/api/customer/orders/:id/payments/confirm", async ({ request, params }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    const customerId = token.replace(/^Bearer customer\./, "");
+    const order = customerOrders.find((row) => row.id === params.id && row.customerId === customerId);
+    if (!order) return HttpResponse.json({ success: false, message: "Order not found." }, { status: 404 });
+    const body = (await request.json()) as { sessionId: string };
+    const already = order.payments.find((row) => row.reference === body.sessionId);
+    if (already) {
+      return HttpResponse.json({ success: true, data: { id: already.id }, message: "Payment recorded." }, { status: 201 });
+    }
+    const amountInr = Math.min(Math.max(order.balanceInr * 0.3, 1), order.balanceInr);
+    const kind = amountInr >= order.balanceInr ? "full" : order.paidInr > 0 ? "balance" : "advance";
+    const payment = {
+      id: `pay-mock-${Date.now()}`,
+      amountInr,
+      kind,
+      method: "stripe",
+      paidAt: new Date().toISOString(),
+      reference: body.sessionId
+    };
+    order.payments.push(payment);
+    order.paidInr += amountInr;
+    order.balanceInr = Math.max(order.totalInr - order.paidInr, 0);
+    if (order.status === "awaiting_payment" && order.paidInr * 10 >= order.totalInr * 3) {
+      order.status = "paid";
+    }
+    return HttpResponse.json({ success: true, data: { id: payment.id }, message: "Payment recorded." }, { status: 201 });
+  }),
+
+  http.get("/api/customer/quotes", ({ request }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    const customerId = token.replace(/^Bearer customer\./, "");
+    const data = quotes.filter(
+      (item) => item.customerId === customerId && ["sent", "accepted", "rejected", "expired"].includes(item.status)
+    );
+    return HttpResponse.json({ success: true, data });
+  }),
+
+  http.get("/api/customer/service-tickets", ({ request }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    return HttpResponse.json({ success: true, data: customerTickets });
+  }),
+
+  http.post("/api/customer/service-tickets", async ({ request }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    const body = (await request.json()) as {
+      serialUnitId: string;
+      faultCode?: string;
+      description: string;
+      billableInr?: number;
+    };
+    const serial = customerOrders.flatMap((order) => order.serials).find((item) => item.id === body.serialUnitId);
+    if (!serial || !serial.deliveredAt) {
+      return HttpResponse.json({ success: false, message: "Serial not found on your orders." }, { status: 404 });
+    }
+    const ticket = {
+      id: `tkt-mock-${Date.now()}`,
+      orderId: customerOrders.find((order) => order.serials.some((item) => item.id === body.serialUnitId))?.id ?? null,
+      serialUnitId: body.serialUnitId,
+      faultCode: body.faultCode ?? null,
+      description: body.description,
+      underWarranty: serial.underWarranty,
+      billableInr: serial.underWarranty ? 0 : (body.billableInr ?? 0),
+      status: "open",
+      serialNumber: serial.serialNumber,
+      productName: serial.productName,
+      createdAt: new Date().toISOString()
+    };
+    customerTickets.unshift(ticket);
+    return HttpResponse.json({ success: true, data: ticket, message: "Service request opened." }, { status: 201 });
+  }),
+
+  http.post("/api/customer/support/ask", async ({ request }) => {
+    const token = request.headers.get("authorization") ?? "";
+    if (!token.startsWith("Bearer customer.")) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    const customerId = token.replace(/^Bearer customer\./, "");
+    const body = (await request.json()) as { question: string };
+    const order = customerOrders.find((row) => row.customerId === customerId);
+    const q = (body.question ?? "").toLowerCase();
+    if (/\b(pay|payment|balance)\b/.test(q) && order) {
+      return HttpResponse.json({
+        success: true,
+        data: {
+          topic: "payment",
+          answer: `Order ${order.id} balance is ₹${order.balanceInr.toLocaleString("en-IN")}.`
+        }
+      });
+    }
+    return HttpResponse.json({
+      success: true,
+      data: {
+        topic: "general",
+        answer: "Ask about payment, dispatch, warranty, quote, installation, or service."
+      }
+    });
   }),
 
   http.post("/api/customer-auth/otp", async ({ request }) => {

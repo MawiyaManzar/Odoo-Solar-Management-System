@@ -20,8 +20,18 @@ export const quoteIdParamSchema = z.object({
   id: z.string().min(1)
 });
 
-export const customerPaymentSchema = z.object({
-  amountInr: z.number().positive("Amount must be greater than zero.").finite("Amount must be a number."),
-  kind: z.enum(["advance", "balance", "full"], { message: "Kind must be advance, balance, or full." }),
-  reference: z.string().trim().min(6, "Enter the UPI UTR (at least 6 characters).")
+export const customerCheckoutSchema = z.object({
+  amountInr: z.number().positive("Amount must be greater than zero.").finite("Amount must be a number.")
+});
+
+export const customerConfirmCheckoutSchema = z.object({
+  sessionId: z.string().trim().min(1, "Stripe session id is required.")
+});
+
+export const customerSupportAskSchema = z.object({
+  question: z
+    .string()
+    .trim()
+    .min(1, "Ask a question.")
+    .max(500, "Keep the question under 500 characters.")
 });

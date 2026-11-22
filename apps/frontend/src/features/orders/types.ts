@@ -8,7 +8,7 @@ export type OrderStatus =
   | "cancelled";
 
 export type PaymentKind = "advance" | "balance" | "full" | "service";
-export type PaymentMethod = "upi" | "neft" | "cash" | "cheque";
+export type PaymentMethod = "upi" | "neft" | "cash" | "cheque" | "stripe";
 
 export interface PaymentItem {
   id: string;

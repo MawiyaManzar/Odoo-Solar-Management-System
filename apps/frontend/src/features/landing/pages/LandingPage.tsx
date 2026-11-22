@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert } from "../../../components/ui/Alert";
-import { BrandMark } from "../../../components/ui/BrandMark";
-import { Button } from "../../../components/ui/Button";
-import { Skeleton } from "../../../components/ui/Skeleton";
+import { APP_CONFIG } from "../../../config/app.config";
 import { listPublicPackages } from "../../catalog/catalog.api";
 import type { PackageItem } from "../../catalog/types";
+import { ProcessPipeline } from "../stageshow/ProcessPipeline";
+import "../landing.css";
 
 function inr(value: number): string {
   return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(value);
@@ -15,10 +15,17 @@ function kindLabel(kind: string): string {
   return kind.replace(/_/g, " ");
 }
 
+function talkerFor(item: PackageItem): string {
+  if (item.systemKind === "hybrid") return "Backup for power cuts";
+  if ((item.capacityKw ?? 0) >= 5) return "Higher bill homes & premises";
+  return "Most homes · subsidy eligible";
+}
+
 export const LandingPage: React.FC = () => {
   const [packages, setPackages] = useState<PackageItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
 
   const loadPackages = () => {
     setIsLoading(true);
@@ -52,341 +59,263 @@ export const LandingPage: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const root = pageRef.current;
+    if (!root) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) return;
+
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        root.style.setProperty("--lp-plane-far-y", `${y * 0.08}px`);
+        root.style.setProperty("--lp-plane-mid-y", `${y * 0.18}px`);
+        root.style.setProperty("--lp-plane-near-y", `${y * 0.28}px`);
+      });
+    };
+
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
+  const peekPackages = packages.slice(0, 3);
+
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", backgroundColor: "var(--page)" }}>
-      <header
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          minHeight: "var(--navbar-height)",
-          padding: "0 var(--layout-gutter)",
-          borderBottom: "var(--border-default)",
-          backgroundColor: "var(--page)"
-        }}
-      >
-        <BrandMark />
-        <nav style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <a href="#packages" style={{ fontWeight: 600, color: "var(--accent-text)", textDecoration: "none" }}>
-            Packages
-          </a>
-          <Link to="/login" style={{ fontWeight: 600, color: "var(--text)", textDecoration: "none" }}>
-            Sign in
-          </Link>
-        </nav>
-      </header>
+    <div className="landing-page" ref={pageRef}>
+      <section className="landing-hero" aria-label="SunPower rooftop solar">
+        <div className="landing-plane landing-plane--far" aria-hidden="true" />
+        <div className="landing-plane landing-plane--fern" aria-hidden="true" />
+        <div className="landing-plane landing-plane--near" aria-hidden="true" />
 
-      <section
-        className="landing-hero"
-        style={{
-          position: "relative",
-          isolation: "isolate",
-          minHeight: "min(82vh, 760px)",
-          padding: "clamp(20px, 3vw, 36px) var(--layout-gutter) var(--space-12, 48px)",
-          borderBottom: "var(--border-default)",
-          backgroundImage: "url(/landing/hero-bg.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "82% 12%"
-        }}
-      >
-        <div
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundColor: "var(--text)",
-            opacity: 0.28,
-            zIndex: 0
-          }}
-        />
-        <div
-          style={{
-            position: "relative",
-            zIndex: 1,
-            maxWidth: "36rem"
-          }}
-        >
-          <h1
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-hero)",
-              fontSize: "clamp(34px, 5vw, 52px)",
-              fontWeight: 700,
-              fontStyle: "italic",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-              color: "var(--white)"
-            }}
-          >
-            <span style={{ display: "block" }}>Go Solar at</span>
-            <span
-              style={{
-                display: "inline-block",
-                marginTop: "6px",
-                backgroundColor: "var(--amber-2)",
-                color: "var(--text)",
-                padding: "2px 12px 0",
-                lineHeight: 1.15
-              }}
-            >
-              Zero Investment
-            </span>
-          </h1>
-          <p
-            style={{
-              margin: "12px 0 0",
-              maxWidth: "28rem",
-              fontSize: "var(--text-base, 15px)",
-              lineHeight: 1.45,
-              color: "var(--white)"
-            }}
-          >
-            Save up to 90% on electricity bills with government subsidy and easy EMIs. Tell us about your roof and we
-            schedule a free site survey.
-          </p>
-        </div>
+        <div className="landing-cel">
+          <header className="landing-nav">
+            <Link to="/" className="landing-brand">
+              <img src="/logo.png" alt="" width={28} height={28} />
+              {APP_CONFIG.name}
+            </Link>
+            <nav className="landing-nav-links" aria-label="Landing">
+              <a href="#packages">Packages</a>
+              <a href="#how-it-works">How it works</a>
+              <Link to="/login">Sign in</Link>
+            </nav>
+          </header>
 
-        <aside
-          className="landing-hero-cta-card"
-          style={{
-            position: "absolute",
-            zIndex: 1,
-            top: "75%",
-            right: "clamp(48px, 10vw, 120px)",
-            transform: "translateY(-50%)",
-            width: "min(100% - 32px, 510px)",
-            backgroundColor: "var(--card)",
-            border: "var(--border-default)",
-            borderRadius: "var(--radius-card)",
-            padding: "36px 30px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "18px"
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: "var(--text-xl, 22px)", fontWeight: 650, color: "var(--text)" }}>
-            Book a consultation
-          </h2>
-          <p style={{ margin: 0, fontSize: "var(--text-base, 15px)", lineHeight: 1.5, color: "var(--text-muted)" }}>
-            Answer a few roof questions. Sales calls you back, then a technician visits.
-          </p>
-          <Link to="/inquire" style={{ textDecoration: "none", display: "block" }}>
-            <Button type="button" className="landing-hero-cta">
+          <div className="landing-hero-copy">
+            <h1>
+              Go Solar at
+              <br />
+              <span className="lamp-hit">Zero Investment</span>
+            </h1>
+            <p>
+              Government subsidy and easy EMIs for Jalandhar rooftops and commercial premises. Tell us about your site
+              and we schedule a free survey before any quote.
+            </p>
+            <Link to="/inquire" className="landing-lamp">
               Book consultation
-            </Button>
-          </Link>
-          <a
-            href="#packages"
-            style={{
-              textAlign: "center",
-              fontSize: "var(--text-base, 15px)",
-              fontWeight: 600,
-              color: "var(--accent-text)",
-              textDecoration: "none"
-            }}
-          >
-            View packages
-          </a>
-        </aside>
+            </Link>
+          </div>
+
+          {(isLoading || peekPackages.length > 0 || (!error && packages.length === 0)) && (
+            <div className="landing-hero-peek" aria-busy={isLoading || undefined}>
+              {isLoading && (
+                <div className="landing-peek-item landing-peek-item--skeleton" aria-hidden="true">
+                  <span className="landing-peek-skel" />
+                  <span className="landing-peek-skel landing-peek-skel--short" />
+                </div>
+              )}
+              {!isLoading &&
+                peekPackages.map((item) => (
+                  <div key={item.id} className="landing-peek-item">
+                    <strong>{item.code}</strong>
+                    <span>
+                      {kindLabel(item.systemKind)}
+                      {item.capacityKw != null ? ` · ${item.capacityKw} kW` : ""}
+                      {" · "}
+                      <span className="mono">{inr(item.basePriceInr)}</span>
+                    </span>
+                  </div>
+                ))}
+              {!isLoading && !error && packages.length === 0 && (
+                <div className="landing-peek-item">
+                  <strong>Packages</strong>
+                  <span>Catalog opens when packages are marked active</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </section>
 
-      <style>{`
-        .landing-hero-cta {
-          width: 100%;
-          min-height: 54px;
-          font-size: 17px;
-          font-weight: 700;
-          padding: 16px 24px;
-        }
-        @media (max-width: 900px) {
-          .landing-hero {
-            min-height: auto !important;
-            background-position: 70% 20% !important;
-            padding-bottom: 24px !important;
-          }
-          .landing-hero-cta-card {
-            position: relative !important;
-            top: auto !important;
-            right: auto !important;
-            transform: none !important;
-            width: 100% !important;
-            margin-top: 24px;
-          }
-        }
-      `}</style>
-
-      <section
-        id="packages"
-        style={{ padding: "var(--space-8, 32px) var(--layout-gutter) var(--space-12, 48px)" }}
-      >
-        <h2 style={{ margin: "0 0 4px", fontSize: "var(--text-xl, 22px)", fontWeight: 650, color: "var(--text)" }}>
-          Packages
-        </h2>
-        <p style={{ margin: "0 0 20px", color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
+      <section id="packages" className="landing-section">
+        <h2>Packages</h2>
+        <p className="lede">
           Base prices before subsidy and site adjustments. A survey confirms the roof before any quote.
         </p>
 
         {isLoading && (
-          <div
-            data-testid="landing-skeleton"
-            style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px" }}
-          >
-            <style>{`@keyframes skeleton-pulse { 0%, 100% { opacity: 0.45 } 50% { opacity: 0.9 } }`}</style>
+          <div className="landing-skeleton-grid" data-testid="landing-skeleton">
             {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "var(--border-default)",
-                  borderRadius: "var(--radius-card)",
-                  padding: "16px",
-                  display: "grid",
-                  gap: "10px"
-                }}
-              >
-                <Skeleton width="40%" height={12} />
-                <Skeleton width="70%" height={18} />
-                <Skeleton width="50%" height={14} />
-                <Skeleton width="45%" height={16} />
-              </div>
+              <div key={index} className="landing-skeleton-row" />
             ))}
           </div>
         )}
 
         {error && (
-          <Alert variant="danger" title="Packages unavailable">
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              <span>{error}</span>
-              <Button type="button" variant="outline" size="sm" onClick={loadPackages}>
-                Retry
-              </Button>
-            </div>
-          </Alert>
+          <div className="landing-error-wrap">
+            <Alert variant="danger" title="Packages unavailable">
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <span>{error}</span>
+                <button type="button" className="landing-retry" onClick={loadPackages}>
+                  Retry
+                </button>
+              </div>
+            </Alert>
+          </div>
         )}
 
         {!isLoading && !error && packages.length === 0 && (
-          <div data-testid="landing-empty" style={{ padding: "24px 0" }}>
-            <h3 style={{ margin: 0, fontSize: "var(--text-lg, 18px)" }}>No active packages yet</h3>
-            <p style={{ margin: "8px 0 16px", color: "var(--text-muted)" }}>
+          <div className="landing-empty" data-testid="landing-empty">
+            <h3 style={{ margin: 0, fontFamily: "var(--lp-font-display)", fontSize: "22px" }}>
+              No active packages yet
+            </h3>
+            <p style={{ margin: "8px 0 16px", color: "var(--lp-muted)" }}>
               Catalog packages will appear here when an admin marks them active.
             </p>
-            <Link to="/inquire">
-              <Button type="button">Still book a survey</Button>
+            <Link to="/inquire" className="landing-lamp">
+              Still book a survey
             </Link>
           </div>
         )}
 
         {!isLoading && !error && packages.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "12px" }}>
-            {packages.map((item) => (
-              <article
-                key={item.id}
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "var(--border-default)",
-                  borderRadius: "var(--radius-card)",
-                  padding: "18px 16px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "4px"
-                }}
-              >
-                <p style={{ margin: 0, fontSize: "var(--text-sm, 13px)", color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-                  {item.code}
-                </p>
-                <h3 style={{ margin: "4px 0 0", fontSize: "var(--text-lg, 18px)" }}>{item.name}</h3>
-                <p style={{ margin: "8px 0 0", textTransform: "capitalize", color: "var(--text-muted)" }}>
-                  {kindLabel(item.systemKind)}
-                  {item.capacityKw != null ? ` · ${item.capacityKw} kW` : ""}
-                </p>
-                <p style={{ margin: "16px 0 0", fontWeight: 700, fontSize: "var(--text-lg, 18px)", fontFamily: "var(--font-mono)" }}>
-                  {inr(item.basePriceInr)}
-                </p>
-                <div style={{ marginTop: "auto", paddingTop: "16px" }}>
-                  <Link to="/inquire">
-                    <Button type="button" variant="outline" size="sm">
-                      Get this sized for my roof
-                    </Button>
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+          <table className="landing-pkg-table">
+            <thead>
+              <tr>
+                <th scope="col">Code</th>
+                <th scope="col">System</th>
+                <th scope="col">Capacity</th>
+                <th scope="col">Base</th>
+                <th scope="col">
+                  <span className="sr-only">Action</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {packages.map((item) => (
+                <tr key={item.id}>
+                  <td data-label="Code" className="mono">
+                    {item.code}
+                  </td>
+                  <td data-label="System">
+                    {item.name}
+                    <span className="talker">{talkerFor(item)}</span>
+                  </td>
+                  <td data-label="Capacity" className="mono">
+                    {item.capacityKw != null ? `${item.capacityKw} kW` : "—"}
+                  </td>
+                  <td data-label="Base" className="mono">
+                    {inr(item.basePriceInr)}
+                  </td>
+                  <td data-label="Next">
+                    <Link to="/inquire" className="landing-pkg-cta">
+                      Size for my roof
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </section>
 
-      <section
-        style={{
-          padding: "var(--space-8, 32px) var(--layout-gutter)",
-          borderTop: "var(--border-default)",
-          backgroundColor: "var(--section)"
-        }}
-      >
-        <h2 style={{ margin: 0, fontSize: "var(--text-xl, 22px)" }}>What to expect</h2>
-        <ol
-          style={{
-            margin: "16px 0 0",
-            padding: 0,
-            listStyle: "none",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "12px"
-          }}
-        >
-          {[
-            {
-              step: "1",
-              title: "Tell us about the roof",
-              body: "Ownership, type, terrace size, and bill in a short wizard."
-            },
-            {
-              step: "2",
-              title: "We call and visit",
-              body: "Sales follows up, then a technician surveys the site."
-            },
-            {
-              step: "3",
-              title: "Quote after survey",
-              body: "No price lock until the roof is checked."
-            }
-          ].map((item) => (
-            <li
-              key={item.step}
-              style={{
-                backgroundColor: "var(--card)",
-                border: "var(--border-default)",
-                borderRadius: "var(--radius-card)",
-                padding: "16px"
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  width: "28px",
-                  height: "28px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "var(--radius-badge)",
-                  backgroundColor: "var(--accent-tint)",
-                  color: "var(--accent-text)",
-                  fontWeight: 700,
-                  fontSize: "var(--text-sm, 13px)"
-                }}
-              >
-                {item.step}
-              </p>
-              <h3 style={{ margin: "10px 0 4px", fontSize: "var(--text-base, 15px)" }}>{item.title}</h3>
-              <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>{item.body}</p>
-            </li>
-          ))}
+      <section id="how-it-works" className="landing-section landing-section--haze">
+        <h2>What to expect</h2>
+        <p className="lede">Three steps into the real install pipeline — survey before any price lock.</p>
+        <ol className="landing-steps">
+          <li>
+            <span className="step-label">Step 1</span>
+            <h3>Tell us about the roof</h3>
+            <p>Ownership, type, terrace size, and bill in a short wizard.</p>
+          </li>
+          <li>
+            <span className="step-label">Step 2</span>
+            <h3>We call and visit</h3>
+            <p>Sales follows up, then a technician surveys the site.</p>
+          </li>
+          <li>
+            <span className="step-label">Step 3</span>
+            <h3>Quote after survey</h3>
+            <p>No price lock until the roof is checked.</p>
+          </li>
         </ol>
-        <div style={{ marginTop: "20px" }}>
-          <Link to="/inquire">
-            <Button type="button">Start the survey form</Button>
+        <div className="landing-section-action">
+          <Link to="/inquire" className="landing-lamp">
+            Start the survey form
           </Link>
         </div>
       </section>
+
+      <footer className="landing-footer">
+        <div className="landing-footer-grid">
+          <div>
+            <div className="brand-line">{APP_CONFIG.name}</div>
+            <p>
+              Rooftop and commercial solar for Jalandhar. Public enquiries enter the live install pipeline —
+              survey, quote, order, and install.
+            </p>
+          </div>
+          <div>
+            <h3>Explore</h3>
+            <ul>
+              <li>
+                <a href="#packages">Packages</a>
+              </li>
+              <li>
+                <a href="#how-it-works">How it works</a>
+              </li>
+              <li>
+                <Link to="/inquire">Book consultation</Link>
+              </li>
+              <li>
+                <Link to="/login">Staff sign in</Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3>Contact</h3>
+            <ul>
+              <li>Jalandhar, Punjab</li>
+              <li>
+                <a href="mailto:sales@sunpower.in">sales@sunpower.in</a>
+              </li>
+              <li>
+                <Link to="/inquire">Request a site survey</Link>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="landing-footer-bar">
+          <span>
+            © {new Date().getFullYear()} {APP_CONFIG.name}
+          </span>
+          <span>Survey before quote · Live catalog rates</span>
+        </div>
+      </footer>
+
+      <nav className="landing-bottom-bar" aria-label="Quick actions">
+        <a href="#packages">Packages</a>
+        <a href="#how-it-works">Steps</a>
+        <Link to="/inquire" className="landing-lamp">
+          Book consultation
+        </Link>
+      </nav>
     </div>
   );
 };
