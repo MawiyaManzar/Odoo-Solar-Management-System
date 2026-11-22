@@ -5,3 +5,7 @@ dist
 *.tsbuildinfo
 dist
 *.tsbuildinfo
+.agents
+.cursor/settings.json
+skills-lock.json
+apps/frontend/.impeccable/
