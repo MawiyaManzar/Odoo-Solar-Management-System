@@ -67,10 +67,15 @@ Unless noted, list endpoints return `data` as an **array** of result objects (sa
 
 ## Auth (existing)
 
-### `POST /api/auth/signup` — public → 201 `AuthUser + token`
+### `POST /api/auth/signup` — closed → 403
 
-Body: `{ fullName, email, companyName, role, password, agreeToTerms }`  
-`role` ∈ `admin | sales | warehouse | technician | support`
+Public self-signup is disabled. Directors provision accounts from **Staff**.
+
+### `POST /api/staff` — admin → 201
+
+Body: `{ fullName, email, companyName, role, password }`  
+`role` ∈ `sales | warehouse | technician | support` (not `admin`)  
+Returns `{ id, name, email, role, companyName, createdAt }` (does not switch the admin session).
 
 ### `POST /api/auth/login` — public → 200
 

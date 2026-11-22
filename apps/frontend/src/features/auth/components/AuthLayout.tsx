@@ -7,7 +7,7 @@ import { APP_CONFIG } from "../../../config/app.config";
 interface AuthLayoutProps {
   children: React.ReactNode;
   /** Link shown on the right of the header, e.g. "Create an account". */
-  headerLink: { to: string; label: string; prefix?: string };
+  headerLink?: { to: string; label: string; prefix?: string };
   /** "wide" is used by the signup form (two-column fields). */
   width?: "default" | "wide";
   /** Optional note rendered under the card. */
@@ -21,7 +21,7 @@ interface AuthLayoutProps {
   heroImage?: string;
 }
 
-const HeaderLink: React.FC<AuthLayoutProps["headerLink"]> = ({ to, label, prefix }) => (
+const HeaderLink: React.FC<NonNullable<AuthLayoutProps["headerLink"]>> = ({ to, label, prefix }) => (
   <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2, 8px)", fontSize: "var(--text-sm, 13px)" }}>
     {prefix && <span style={{ color: "var(--text-muted)" }}>{prefix}</span>}
     <Link to={to} style={{ fontWeight: 600, color: "var(--accent-text)", textDecoration: "none" }}>
@@ -60,7 +60,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
             <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
               <BrandMark />
             </Link>
-            <HeaderLink {...headerLink} />
+            {headerLink ? <HeaderLink {...headerLink} /> : <span />}
           </header>
 
           <main className="auth-split__main">
@@ -206,7 +206,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
         <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
           <BrandMark />
         </Link>
-        <HeaderLink {...headerLink} />
+        {headerLink ? <HeaderLink {...headerLink} /> : <span />}
       </header>
 
       <main

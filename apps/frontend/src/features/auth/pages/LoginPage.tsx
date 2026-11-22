@@ -62,11 +62,7 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout
-      variant="split"
-      heroImage="/images/solar-login.jpg"
-      headerLink={{ to: "/signup", label: "Staff sign up" }}
-    >
+    <AuthLayout variant="split" heroImage="/images/solar-login.jpg">
       <div style={{ display: "flex", gap: "8px", marginBottom: "1.25rem", flexWrap: "wrap" }}>
         <Button
           type="button"

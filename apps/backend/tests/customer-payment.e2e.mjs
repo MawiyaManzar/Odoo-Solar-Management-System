@@ -128,7 +128,7 @@ async function runTests() {
       agreeToTerms: true
     }
   });
-  assert(adminSignup.statusCode === 400, "public signup cannot create admin", state);
+  assert(adminSignup.statusCode === 403, "public signup is closed", state);
 
   await app.close();
   console.log(`\n${state.passed} passed, ${state.failed} failed`);

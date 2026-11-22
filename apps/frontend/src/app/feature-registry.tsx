@@ -11,8 +11,8 @@ import { EnquiryDetailPage } from "../features/enquiries/pages/EnquiryDetailPage
 import { QuoteDetailPage } from "../features/quotes/pages/QuoteDetailPage";
 import { QuotesPage } from "../features/quotes/pages/QuotesPage";
 import { InquiryFormAdminPage } from "../features/inquiry-form/pages/InquiryFormAdminPage";
-import { RecordsPage } from "../features/records/pages/RecordsPage";
 import { ReportsPage } from "../features/reports/pages/ReportsPage";
+import { StaffPage } from "../features/staff/pages/StaffPage";
 
 export interface FeatureRoute {
   id: string;
@@ -94,6 +94,13 @@ export const featureRoutes: FeatureRoute[] = [
     page: ReportsPage
   },
   {
+    id: "staff",
+    path: "staff",
+    label: "Staff",
+    roles: ["admin"],
+    page: StaffPage
+  },
+  {
     id: "orders",
     path: "orders",
     label: "Orders",
@@ -122,12 +129,5 @@ export const featureRoutes: FeatureRoute[] = [
     roles: staff,
     page: DispatchDetailPage,
     showInNav: false
-  },
-  {
-    id: "records",
-    path: "records",
-    label: "Records Console",
-    roles: staff,
-    page: RecordsPage
   }
 ];

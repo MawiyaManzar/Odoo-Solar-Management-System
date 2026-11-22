@@ -13,7 +13,7 @@ const HTTP_METHODS = new Set<string>(["GET", "POST", "PUT", "PATCH", "DELETE", "
 
 const PUBLIC_PATHS = new Set([
   "GET /api/health",
-  "POST /api/auth/signup",
+  "POST /api/auth/signup", // closed endpoint; still unauthenticated (always 403)
   "POST /api/auth/login",
   "GET /api/public/packages",
   "GET /api/public/packages/:id",

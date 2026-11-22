@@ -5,79 +5,113 @@ import { Button } from "../../../components/ui/Button";
 import { Dialog } from "../../../components/ui/Dialog";
 import { Input } from "../../../components/ui/Input";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import { Select } from "../../../components/ui/Select";
 import { SkeletonRows } from "../../../components/ui/Skeleton";
 import { Table } from "../../../components/ui/Table";
 import { createInquiryQuestion, deleteInquiryQuestion, updateInquiryQuestion } from "../inquiry-form.api";
 import { useInquiryQuestions } from "../hooks/useInquiryQuestions";
-import type { InquiryFieldType, InquiryMapsTo, InquiryOption, InquiryQuestion } from "../types";
-
-const FIELD_TYPES: { value: InquiryFieldType; label: string }[] = [
-  { value: "single_choice", label: "Single choice" },
-  { value: "select", label: "Select" },
-  { value: "text", label: "Text" },
-  { value: "number", label: "Number" },
-  { value: "boolean", label: "Yes / No" }
-];
-
-const MAPS_TO: { value: string; label: string }[] = [
-  { value: "", label: "Notes only" },
-  { value: "requestedKw", label: "Requested kW" },
-  { value: "systemKind", label: "System kind" },
-  { value: "wantsSubsidy", label: "Wants subsidy" },
-  { value: "monthlyBillInr", label: "Monthly bill (INR)" },
-  { value: "roofAreaSqft", label: "Roof area (sqft)" },
-  { value: "gridSuitable", label: "Grid suitable" }
-];
+import type { InquiryOption, InquiryQuestion, InquiryQuestionInput } from "../types";
 
 type FormState = {
-  key: string;
   label: string;
-  helpText: string;
-  fieldType: InquiryFieldType;
-  options: InquiryOption[];
-  mapsTo: string;
-  sortOrder: string;
-  isRequired: boolean;
+  optionLabels: string[];
   isActive: boolean;
 };
 
 const emptyForm = (): FormState => ({
-  key: "",
   label: "",
-  helpText: "",
-  fieldType: "single_choice",
-  options: [
-    { value: "option_a", label: "Option A" },
-    { value: "option_b", label: "Option B" }
-  ],
-  mapsTo: "",
-  sortOrder: "100",
-  isRequired: true,
+  optionLabels: ["", ""],
   isActive: true
 });
 
 function fromQuestion(question: InquiryQuestion): FormState {
   return {
-    key: question.key,
     label: question.label,
-    helpText: question.helpText ?? "",
-    fieldType: question.fieldType,
-    options: question.options?.length
-      ? question.options.map((opt) => ({ ...opt }))
-      : [
-          { value: "option_a", label: "Option A" },
-          { value: "option_b", label: "Option B" }
-        ],
-    mapsTo: question.mapsTo ?? "",
-    sortOrder: String(question.sortOrder),
-    isRequired: question.isRequired,
+    optionLabels: question.options?.length ? question.options.map((opt) => opt.label) : ["", ""],
     isActive: question.isActive
   };
 }
 
-function needsOptions(fieldType: InquiryFieldType): boolean {
-  return fieldType === "single_choice" || fieldType === "select";
+/** Stable API key from the question text (lowercase snake_case). */
+function slugifyKey(label: string, fallback = "question"): string {
+  const slug = label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_+/g, "_");
+  if (!slug) return fallback;
+  return /^[a-z]/.test(slug) ? slug : `q_${slug}`;
+}
+
+function uniqueSlugs(labels: string[]): string[] {
+  const used = new Set<string>();
+  return labels.map((label, index) => {
+    const base = slugifyKey(label, `option_${index + 1}`);
+    let candidate = base;
+    let n = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}_${n}`;
+      n += 1;
+    }
+    used.add(candidate);
+    return candidate;
+  });
+}
+
+function nextSortOrder(questions: InquiryQuestion[]): number {
+  if (questions.length === 0) return 10;
+  return Math.max(...questions.map((q) => q.sortOrder)) + 10;
+}
+
+function uniqueQuestionKey(label: string, questions: InquiryQuestion[]): string {
+  const used = new Set(questions.map((q) => q.key));
+  const base = slugifyKey(label);
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}_${n}`)) n += 1;
+  return `${base}_${n}`;
+}
+
+function buildOptions(optionLabels: string[], existing?: InquiryOption[] | null): InquiryOption[] {
+  const cleaned = optionLabels.map((label) => label.trim()).filter(Boolean);
+  const values = uniqueSlugs(cleaned);
+  return cleaned.map((label, index) => {
+    const priorByLabel = existing?.find((opt) => opt.label.trim() === label);
+    const value = priorByLabel?.value ?? values[index];
+    const option: InquiryOption = { value, label };
+    if (priorByLabel?.mapValue !== undefined) {
+      option.mapValue = priorByLabel.mapValue;
+    }
+    return option;
+  });
+}
+
+function buildCreatePayload(form: FormState, questions: InquiryQuestion[]): InquiryQuestionInput {
+  return {
+    key: uniqueQuestionKey(form.label, questions),
+    label: form.label.trim(),
+    helpText: null,
+    fieldType: "single_choice",
+    options: buildOptions(form.optionLabels),
+    mapsTo: null,
+    sortOrder: nextSortOrder(questions),
+    isRequired: true,
+    isActive: form.isActive
+  };
+}
+
+function buildUpdatePayload(form: FormState, existing: InquiryQuestion): InquiryQuestionInput {
+  return {
+    key: existing.key,
+    label: form.label.trim(),
+    helpText: existing.helpText,
+    fieldType: "single_choice",
+    options: buildOptions(form.optionLabels, existing.options),
+    mapsTo: existing.mapsTo,
+    sortOrder: existing.sortOrder,
+    isRequired: existing.isRequired,
+    isActive: form.isActive
+  };
 }
 
 export const InquiryFormAdminPage: React.FC = () => {
@@ -106,17 +140,22 @@ export const InquiryFormAdminPage: React.FC = () => {
     event.preventDefault();
     setSaving(true);
     setFormError(null);
-    const payload = {
-      key: form.key.trim(),
-      label: form.label.trim(),
-      helpText: form.helpText.trim() || null,
-      fieldType: form.fieldType,
-      options: needsOptions(form.fieldType) ? form.options : null,
-      mapsTo: (form.mapsTo || null) as InquiryMapsTo,
-      sortOrder: Number(form.sortOrder),
-      isRequired: form.isRequired,
-      isActive: form.isActive
-    };
+
+    const label = form.label.trim();
+    const options = buildOptions(form.optionLabels);
+    if (!label) {
+      setFormError("Enter the question text.");
+      setSaving(false);
+      return;
+    }
+    if (options.length < 2) {
+      setFormError("Add at least two answer choices.");
+      setSaving(false);
+      return;
+    }
+
+    const payload = editing ? buildUpdatePayload(form, editing) : buildCreatePayload(form, data);
+
     try {
       if (editing) {
         await updateInquiryQuestion(editing.id, payload);
@@ -143,13 +182,6 @@ export const InquiryFormAdminPage: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  };
-
-  const updateOption = (index: number, patch: Partial<InquiryOption>) => {
-    setForm((prev) => ({
-      ...prev,
-      options: prev.options.map((opt, i) => (i === index ? { ...opt, ...patch } : opt))
-    }));
   };
 
   return (
@@ -194,7 +226,7 @@ export const InquiryFormAdminPage: React.FC = () => {
         <div data-testid="inquiry-form-empty" style={{ padding: "24px var(--layout-gutter)" }}>
           <h2 style={{ margin: "0 0 8px", fontSize: "var(--text-lg)" }}>No survey questions yet</h2>
           <p style={{ margin: "0 0 16px", color: "var(--text-muted)" }}>
-            Add the first question to build the public rooftop survey.
+            Add the first multiple-choice question for the public rooftop survey.
           </p>
           <Button onClick={openCreate}>Add question</Button>
         </div>
@@ -207,10 +239,13 @@ export const InquiryFormAdminPage: React.FC = () => {
           emptyMessage="No survey questions yet."
           columns={[
             { key: "sortOrder", header: "Order", render: (item) => String(item.sortOrder) },
-            { key: "label", header: "Label", render: (item) => item.label },
-            { key: "key", header: "Key", isMono: true, render: (item) => item.key },
-            { key: "fieldType", header: "Type", render: (item) => item.fieldType },
-            { key: "mapsTo", header: "Maps to", render: (item) => item.mapsTo ?? "notes" },
+            { key: "label", header: "Question", render: (item) => item.label },
+            {
+              key: "options",
+              header: "Answers",
+              render: (item) =>
+                item.options?.length ? item.options.map((opt) => opt.label).join(", ") : "—"
+            },
             {
               key: "status",
               header: "Status",
@@ -238,134 +273,82 @@ export const InquiryFormAdminPage: React.FC = () => {
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} title={editing ? "Edit question" : "Add question"}>
-        <form onSubmit={save} style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "70vh", overflowY: "auto" }}>
+        <form
+          onSubmit={save}
+          style={{ display: "flex", flexDirection: "column", gap: "12px", maxHeight: "70vh", overflowY: "auto" }}
+        >
           {formError && (
             <Alert variant="danger" title="Could not save">
               {formError}
             </Alert>
           )}
+
           <Input
-            label="Key"
-            required
-            value={form.key}
-            helperText="Stable id, e.g. roof_type"
-            onChange={(event) => setForm((prev) => ({ ...prev, key: event.target.value }))}
-          />
-          <Input
-            label="Label"
+            label="Question"
             required
             value={form.label}
+            placeholder="e.g. What is your roof type?"
             onChange={(event) => setForm((prev) => ({ ...prev, label: event.target.value }))}
           />
-          <Input
-            label="Help text"
-            value={form.helpText}
-            onChange={(event) => setForm((prev) => ({ ...prev, helpText: event.target.value }))}
-          />
-          <Select
-            label="Field type"
-            value={form.fieldType}
-            options={FIELD_TYPES}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, fieldType: event.target.value as InquiryFieldType }))
-            }
-          />
-          <Select
-            label="Maps to enquiry field"
-            value={form.mapsTo}
-            options={MAPS_TO}
-            onChange={(event) => setForm((prev) => ({ ...prev, mapsTo: event.target.value }))}
-          />
-          <Input
-            label="Sort order"
-            type="number"
-            min={0}
-            required
-            value={form.sortOrder}
-            onChange={(event) => setForm((prev) => ({ ...prev, sortOrder: event.target.value }))}
-          />
-          <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={form.isRequired}
-              onChange={(event) => setForm((prev) => ({ ...prev, isRequired: event.target.checked }))}
-            />
-            Required
-          </label>
+
+          <p style={{ margin: 0, fontSize: "var(--text-sm)", color: "var(--text-muted)" }}>
+            Answer type: multiple choice (visitor picks one option).
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <strong>Answer choices</strong>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => setForm((prev) => ({ ...prev, optionLabels: [...prev.optionLabels, ""] }))}
+              >
+                Add choice
+              </Button>
+            </div>
+            {form.optionLabels.map((optionLabel, index) => (
+              <div
+                key={index}
+                style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "8px", alignItems: "end" }}
+              >
+                <Input
+                  label={`Choice ${index + 1}`}
+                  value={optionLabel}
+                  placeholder="e.g. Concrete terrace"
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      optionLabels: prev.optionLabels.map((item, i) => (i === index ? event.target.value : item))
+                    }))
+                  }
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={form.optionLabels.length <= 2}
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      optionLabels: prev.optionLabels.filter((_, i) => i !== index)
+                    }))
+                  }
+                >
+                  Remove
+                </Button>
+              </div>
+            ))}
+          </div>
+
           <label style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             <input
               type="checkbox"
               checked={form.isActive}
               onChange={(event) => setForm((prev) => ({ ...prev, isActive: event.target.checked }))}
             />
-            Active on public survey
+            Show on public survey
           </label>
-
-          {needsOptions(form.fieldType) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong>Options</strong>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() =>
-                    setForm((prev) => ({
-                      ...prev,
-                      options: [...prev.options, { value: `option_${prev.options.length + 1}`, label: "New option" }]
-                    }))
-                  }
-                >
-                  Add option
-                </Button>
-              </div>
-              {form.options.map((opt, index) => (
-                <div key={index} style={{ display: "grid", gap: "8px", borderTop: "1px solid var(--line)", paddingTop: "8px" }}>
-                  <Input
-                    label="Value"
-                    value={opt.value}
-                    onChange={(event) => updateOption(index, { value: event.target.value })}
-                  />
-                  <Input
-                    label="Label"
-                    value={opt.label}
-                    onChange={(event) => updateOption(index, { label: event.target.value })}
-                  />
-                  <Input
-                    label="Map value"
-                    value={opt.mapValue === undefined ? "" : String(opt.mapValue)}
-                    helperText="Optional number or true/false for column mapping"
-                    onChange={(event) => {
-                      const raw = event.target.value.trim();
-                      if (!raw) {
-                        updateOption(index, { mapValue: undefined });
-                        return;
-                      }
-                      if (raw === "true" || raw === "false") {
-                        updateOption(index, { mapValue: raw === "true" });
-                        return;
-                      }
-                      const num = Number(raw);
-                      updateOption(index, { mapValue: Number.isNaN(num) ? raw : num });
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        options: prev.options.filter((_, i) => i !== index)
-                      }))
-                    }
-                  >
-                    Remove option
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
 
           <Button type="submit" isLoading={saving}>
             Save question

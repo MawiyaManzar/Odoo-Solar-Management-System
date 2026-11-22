@@ -65,25 +65,37 @@ async function runTests() {
   assert(Array.isArray(recordsBody.data) && recordsBody.data.length >= 5, "seed records are present", state);
 
   const email = `e2e-${Date.now().toString(36)}@starter.dev`;
-  const signupPayload = {
+  const staffPayload = {
     fullName: "E2E User",
     email,
     companyName: "SunPower Solutions",
     role: "sales",
-    password: "Password123!",
-    agreeToTerms: true
+    password: "Password123!"
   };
 
-  console.log("\n6. POST /api/auth/signup");
-  const signup = await app.inject({ method: "POST", url: "/api/auth/signup", payload: signupPayload });
+  console.log("\n6. POST /api/auth/signup is closed");
+  const publicSignup = await app.inject({ method: "POST", url: "/api/auth/signup", payload: { ...staffPayload, agreeToTerms: true } });
+  assert(publicSignup.statusCode === 403, "public signup is 403", state);
+
+  console.log("\n6b. POST /api/staff (admin)");
+  const signup = await app.inject({
+    method: "POST",
+    url: "/api/staff",
+    headers: { authorization: `Bearer ${adminToken}` },
+    payload: staffPayload
+  });
   const signupBody = signup.json();
   assert(signup.statusCode === 201, "status is 201", state);
   assert(signupBody.data?.email === email, "email matches", state);
-  assert(signupBody.data?.userId?.startsWith("usr-"), "user id prefix", state);
-  assert(typeof signupBody.data?.token === "string", "signup token returned", state);
+  assert(signupBody.data?.id?.startsWith("usr-"), "user id prefix", state);
 
-  console.log("\n7. POST /api/auth/signup duplicate email");
-  const conflict = await app.inject({ method: "POST", url: "/api/auth/signup", payload: signupPayload });
+  console.log("\n7. POST /api/staff duplicate email");
+  const conflict = await app.inject({
+    method: "POST",
+    url: "/api/staff",
+    headers: { authorization: `Bearer ${adminToken}` },
+    payload: staffPayload
+  });
   const conflictBody = conflict.json();
   assert(conflict.statusCode === 409, "status is 409", state);
   assert(conflictBody.message?.includes("already registered"), "conflict message", state);

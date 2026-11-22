@@ -3,7 +3,28 @@ import { SignupInput } from "../../features/auth/types";
 import { issueToken, publicUser, usersByEmail, userFromRequest } from "../session-store";
 
 export const authHandlers = [
-  http.post("/api/auth/signup", async ({ request }) => {
+  http.post("/api/auth/signup", () =>
+    HttpResponse.json(
+      {
+        success: false,
+        message: "Staff accounts are created by a director. Ask your admin to add you from the Staff page."
+      },
+      { status: 403 }
+    )
+  ),
+
+  http.post("/api/staff", async ({ request }) => {
+    const actor = userFromRequest(request);
+    if (!actor) {
+      return HttpResponse.json({ success: false, message: "Authentication required." }, { status: 401 });
+    }
+    if (actor.role !== "admin") {
+      return HttpResponse.json(
+        { success: false, message: "You do not have access to this action." },
+        { status: 403 }
+      );
+    }
+
     const body = (await request.json()) as SignupInput;
     const email = body.email.toLowerCase();
 
@@ -31,8 +52,15 @@ export const authHandlers = [
     return HttpResponse.json(
       {
         success: true,
-        data: { ...publicUser(user), token: issueToken(email) },
-        message: "Account provisioned successfully."
+        data: {
+          id: user.userId,
+          name: user.fullName,
+          email: user.email,
+          role: user.role,
+          companyName: user.companyName,
+          createdAt: user.createdAt
+        },
+        message: "Staff account created."
       },
       { status: 201 }
     );

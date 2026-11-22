@@ -8,7 +8,7 @@ export interface AppConfig {
   tagline: string;
   version: string;
   defaultRoles: AppRoleOption[];
-  /** Roles offered on public staff signup — admin is seed-only. */
+  /** Roles an admin may assign when creating staff — admin itself stays seed-only. */
   signupRoles: AppRoleOption[];
 }
 

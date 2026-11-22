@@ -59,8 +59,9 @@ Full request/response detail: [API.md](API.md).
 | Method | Path | Roles | Owner feature |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/health` | public | health |
-| POST | `/api/auth/signup` | public | auth |
+| POST | `/api/auth/signup` | closed (403) | auth |
 | POST | `/api/auth/login` | public | auth |
+| POST | `/api/staff` | admin | auth |
 | GET | `/api/auth/me` | any auth | auth |
 | GET | `/api/public/packages` | public | catalog |
 | GET | `/api/public/packages/:id` | public | catalog |

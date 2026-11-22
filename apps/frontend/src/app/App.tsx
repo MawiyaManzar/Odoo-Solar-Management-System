@@ -2,7 +2,6 @@ import React from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Alert } from "../components/ui/Alert";
 import { LoginPage } from "../features/auth/pages/LoginPage";
-import { SignupPage } from "../features/auth/pages/SignupPage";
 import { CustomerShell } from "../features/customer-portal/components/CustomerShell";
 import { CustomerJobsPage } from "../features/customer-portal/pages/CustomerJobsPage";
 import { CustomerQuotesListPage } from "../features/customer-portal/pages/CustomerQuotesListPage";
@@ -77,14 +76,7 @@ export const App: React.FC = () => {
               </PublicOnly>
             }
           />
-          <Route
-            path="/signup"
-            element={
-              <PublicOnly>
-                <SignupPage />
-              </PublicOnly>
-            }
-          />
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
           <Route
             path="/app"
             element={

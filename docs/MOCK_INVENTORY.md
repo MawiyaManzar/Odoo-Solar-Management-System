@@ -10,13 +10,10 @@
 
 | Feature | Mock endpoint | Real API | Status | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| Auth / Signup | `POST /api/auth/signup` | `POST /api/auth/signup` | `REAL API VERIFIED` | Persists a user and returns a JWT |
+| Auth / Signup | `POST /api/auth/signup` | `POST /api/auth/signup` | `REAL API VERIFIED` | Closed — always 403; use Staff |
+| Staff create | `POST /api/staff` | `POST /api/staff` | `REAL API IMPLEMENTED` | Admin only; sales/warehouse/technician/support |
 | Auth / Login | `POST /api/auth/login` | `POST /api/auth/login` | `REAL API VERIFIED` | Demo password is in `docs/SETUP.md` |
 | Auth / Session | `GET /api/auth/me` | `GET /api/auth/me` | `REAL API VERIFIED` | Requires `Authorization: Bearer` |
-| Records list | `GET /api/records` | `GET /api/records` | `REAL API VERIFIED` | Any signed-in role |
-| Record detail | `GET /api/records/:id` | `GET /api/records/:id` | `REAL API VERIFIED` | Used by the edit dialog |
-| Record create | `POST /api/records` | `POST /api/records` | `REAL API VERIFIED` | `admin` and `manager` only |
-| Record update | `PATCH /api/records/:id` | `PATCH /api/records/:id` | `REAL API VERIFIED` | `admin` and `manager` only |
 | Public packages | `GET /api/public/packages` | `GET /api/public/packages` | `REAL API VERIFIED` | Active packages for the landing page |
 | Public package | `GET /api/public/packages/:id` | `GET /api/public/packages/:id` | `REAL API IMPLEMENTED` | 404 when inactive |
 | Public enquiry | `POST /api/public/enquiries` | `POST /api/public/enquiries` | `REAL API VERIFIED` | Upserts customer by phone, `source: web_form`. Optional `answers[]` stored in `inquiry_form_answers` and mapped to columns/notes |

@@ -1,15 +1,17 @@
 import { z } from "zod";
 
-/** Public signup cannot create directors — seed or an existing admin must assign that role. */
-export const PUBLIC_SIGNUP_ROLES = ["sales", "warehouse", "technician", "support"] as const;
+/** Admin-provisioned staff roles — directors stay seed-only. */
+export const STAFF_ROLES = ["sales", "warehouse", "technician", "support"] as const;
 
-export const signupSchema = z.object({
+/** @deprecated Public signup is closed; use createStaffSchema via POST /api/staff. */
+export const PUBLIC_SIGNUP_ROLES = STAFF_ROLES;
+
+export const createStaffSchema = z.object({
   fullName: z.string().trim().min(1, "Full name is required."),
   email: z.string().trim().email("Enter a valid email address."),
   companyName: z.string().trim().min(1, "Company or organization name is required."),
-  role: z.enum(PUBLIC_SIGNUP_ROLES, { message: "Choose sales, warehouse, technician, or support." }),
-  password: z.string().min(8, "Password must be at least 8 characters long."),
-  agreeToTerms: z.boolean().refine((value) => value, "You must accept the terms.")
+  role: z.enum(STAFF_ROLES, { message: "Choose sales, warehouse, technician, or support." }),
+  password: z.string().min(8, "Password must be at least 8 characters long.")
 });
 
 export const loginSchema = z.object({
@@ -17,5 +19,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required.")
 });
 
-export type SignupInput = z.infer<typeof signupSchema>;
+export type CreateStaffInput = z.infer<typeof createStaffSchema>;
+/** Alias kept for existing service callers. */
+export type SignupInput = CreateStaffInput;
 export type LoginInput = z.infer<typeof loginSchema>;
