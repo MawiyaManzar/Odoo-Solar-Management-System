@@ -95,9 +95,27 @@ export const catalogHandlers = [
     if (user.role !== "admin") return forbidden();
     const body = (await request.json()) as PackageInput;
     const id = `pkg-${Date.now().toString(36)}`;
+    const kindPrefix: Record<string, string> = {
+      on_grid: "OG",
+      off_grid: "OFF",
+      panel_set: "PS",
+      installation_only: "IO"
+    };
+    const prefix = kindPrefix[body.systemKind] ?? "PKG";
+    const base =
+      body.capacityKw == null
+        ? prefix
+        : `${prefix}-${Number.isInteger(body.capacityKw) ? body.capacityKw : body.capacityKw}KW`;
+    const used = new Set(packages.map((item) => item.code));
+    let code = base;
+    if (used.has(code)) {
+      let n = 2;
+      while (used.has(`${base}-${n}`)) n += 1;
+      code = `${base}-${n}`;
+    }
     const created: PackageItem = {
       id,
-      code: body.code,
+      code,
       name: body.name,
       systemKind: body.systemKind,
       capacityKw: body.capacityKw ?? null,

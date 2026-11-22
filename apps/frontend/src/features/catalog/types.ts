@@ -42,7 +42,6 @@ export interface ProductInput {
 }
 
 export interface PackageInput {
-  code: string;
   name: string;
   systemKind: string;
   capacityKw?: number | null;

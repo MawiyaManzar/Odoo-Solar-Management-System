@@ -32,7 +32,6 @@ const packageItemInputSchema = z.object({
 });
 
 export const packageBodySchema = z.object({
-  code: z.string().trim().min(1),
   name: z.string().trim().min(1),
   systemKind: z.enum(PACKAGE_SYSTEM_KINDS),
   capacityKw: z.number().positive().nullable().optional(),
@@ -42,7 +41,6 @@ export const packageBodySchema = z.object({
 });
 
 export const packagePatchSchema = z.object({
-  code: z.string().trim().min(1).optional(),
   name: z.string().trim().min(1).optional(),
   systemKind: z.enum(PACKAGE_SYSTEM_KINDS).optional(),
   capacityKw: z.number().positive().nullable().optional(),

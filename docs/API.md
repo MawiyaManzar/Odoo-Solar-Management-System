@@ -178,9 +178,9 @@ Creates or updates the customer matched by phone, then inserts an enquiry with `
 | Method | Path | Roles | Body / notes |
 | :--- | :--- | :--- | :--- |
 | GET | `/api/packages` | any auth | |
-| POST | `/api/packages` | admin | `{ code, name, systemKind, capacityKw?, basePriceInr, items: [{ productId, qty }] }` creates package + items in one transaction |
+| POST | `/api/packages` | admin | `{ name, systemKind, capacityKw?, basePriceInr, items: [{ productId, qty }] }` creates package + items; `code` is generated from kind + capacity (e.g. `OG-3KW`) |
 | GET | `/api/packages/:id` | any auth | include `items` |
-| PATCH | `/api/packages/:id` | admin | package fields; replace items only via dedicated body `items` if provided |
+| PATCH | `/api/packages/:id` | admin | package fields (not `code`); `code` regenerates if `systemKind` / `capacityKw` change; replace items via body `items` if provided |
 
 `systemKind` ∈ `on_grid | off_grid | panel_set | installation_only`
 

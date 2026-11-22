@@ -96,6 +96,35 @@ async function assertProductsExist(productIds: string[]): Promise<void> {
   }
 }
 
+/** Kind + capacity → stable codes like OG-3KW (matches seed style). */
+const SYSTEM_KIND_CODE: Record<PackageSystemKind, string> = {
+  on_grid: "OG",
+  off_grid: "OFF",
+  panel_set: "PS",
+  installation_only: "IO"
+};
+
+function packageCodeBase(systemKind: PackageSystemKind, capacityKw: number | null | undefined): string {
+  const prefix = SYSTEM_KIND_CODE[systemKind];
+  if (capacityKw == null) return prefix;
+  const capacity = Number.isInteger(capacityKw) ? String(capacityKw) : String(capacityKw);
+  return `${prefix}-${capacity}KW`;
+}
+
+async function nextPackageCode(
+  systemKind: PackageSystemKind,
+  capacityKw: number | null | undefined,
+  options?: { excludeCode?: string }
+): Promise<string> {
+  const base = packageCodeBase(systemKind, capacityKw);
+  const rows = await db.select({ code: packages.code }).from(packages);
+  const used = new Set(rows.map((row) => row.code).filter((code) => code !== options?.excludeCode));
+  if (!used.has(base)) return base;
+  let n = 2;
+  while (used.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
 export async function listProducts(query: { category?: ProductCategory; active?: "true" | "false" }): Promise<ProductResult[]> {
   const filters = [];
   if (query.category) filters.push(eq(products.category, query.category));
@@ -179,6 +208,7 @@ export async function getPackage(id: string, options?: { activeOnly?: boolean })
 
 export async function createPackage(input: PackageInput): Promise<PackageResult> {
   await assertProductsExist(input.items.map((item) => item.productId));
+  const code = await nextPackageCode(input.systemKind, input.capacityKw ?? null);
   try {
     return await db.transaction(async (tx) => {
       const id = newId(ID_PREFIXES.package);
@@ -186,7 +216,7 @@ export async function createPackage(input: PackageInput): Promise<PackageResult>
         .insert(packages)
         .values({
           id,
-          code: input.code,
+          code,
           name: input.name,
           systemKind: input.systemKind,
           capacityKw: input.capacityKw ?? null,
@@ -216,15 +246,23 @@ export async function createPackage(input: PackageInput): Promise<PackageResult>
 export async function updatePackage(id: string, input: PackagePatch): Promise<PackageResult> {
   const current = await getPackage(id);
   if (input.items) await assertProductsExist(input.items.map((item) => item.productId));
+  const nextKind = (input.systemKind ?? current.systemKind) as PackageSystemKind;
+  const nextCapacity = input.capacityKw === undefined ? current.capacityKw : input.capacityKw;
+  const kindOrCapacityChanged =
+    (input.systemKind !== undefined && input.systemKind !== current.systemKind) ||
+    (input.capacityKw !== undefined && input.capacityKw !== current.capacityKw);
+  const code = kindOrCapacityChanged
+    ? await nextPackageCode(nextKind, nextCapacity, { excludeCode: current.code })
+    : current.code;
   try {
     return await db.transaction(async (tx) => {
       const [row] = await tx
         .update(packages)
         .set({
-          code: input.code ?? current.code,
+          code,
           name: input.name ?? current.name,
-          systemKind: input.systemKind ?? current.systemKind,
-          capacityKw: input.capacityKw === undefined ? current.capacityKw : input.capacityKw,
+          systemKind: nextKind,
+          capacityKw: nextCapacity,
           basePriceInr: input.basePriceInr ?? current.basePriceInr,
           isActive: input.isActive ?? current.isActive
         })

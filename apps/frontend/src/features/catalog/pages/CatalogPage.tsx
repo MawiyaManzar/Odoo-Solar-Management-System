@@ -7,49 +7,111 @@ import { Input } from "../../../components/ui/Input";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { Select } from "../../../components/ui/Select";
 import { Table } from "../../../components/ui/Table";
-import { createPackage, createProduct } from "../catalog.api";
+import { createPackage, createProduct, updateProduct } from "../catalog.api";
 import { useCatalog } from "../hooks/useCatalog";
+import type { ProductItem } from "../types";
 
 const CATEGORIES = ["panel", "inverter", "battery", "charge_controller", "mount", "wiring", "safety", "service"];
 const KINDS = ["on_grid", "off_grid", "panel_set", "installation_only"];
 
+type ProductFormState = {
+  sku: string;
+  name: string;
+  category: string;
+  price: string;
+  cost: string;
+  warrantyMonths: string;
+  isSerialized: boolean;
+  isActive: boolean;
+};
+
+const emptyProductForm = (): ProductFormState => ({
+  sku: "",
+  name: "",
+  category: "panel",
+  price: "",
+  cost: "0",
+  warrantyMonths: "",
+  isSerialized: false,
+  isActive: true
+});
+
+function formFromProduct(product: ProductItem): ProductFormState {
+  return {
+    sku: product.sku,
+    name: product.name,
+    category: product.category,
+    price: String(product.unitPriceInr),
+    cost: String(product.unitCostInr),
+    warrantyMonths: product.defaultWarrantyMonths == null ? "" : String(product.defaultWarrantyMonths),
+    isSerialized: product.isSerialized,
+    isActive: product.isActive
+  };
+}
+
+function parseWarrantyMonths(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  const value = Number(trimmed);
+  if (Number.isNaN(value) || value < 1 || !Number.isInteger(value)) {
+    throw new Error("Warranty must be a whole number of months, or left blank.");
+  }
+  return value;
+}
+
 export const CatalogPage: React.FC = () => {
   const { products, packages, isLoading, error, refetch } = useCatalog();
   const [productOpen, setProductOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null);
   const [packageOpen, setPackageOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [productForm, setProductForm] = useState<ProductFormState>(emptyProductForm);
 
-  const [sku, setSku] = useState("");
-  const [productName, setProductName] = useState("");
-  const [category, setCategory] = useState("panel");
-  const [price, setPrice] = useState("");
-  const [cost, setCost] = useState("0");
-
-  const [code, setCode] = useState("");
   const [packageName, setPackageName] = useState("");
   const [systemKind, setSystemKind] = useState("on_grid");
   const [capacityKw, setCapacityKw] = useState("3");
   const [basePrice, setBasePrice] = useState("");
-  const [productId, setProductId] = useState("");
-  const [qty, setQty] = useState("1");
+  const [packageLines, setPackageLines] = useState<{ productId: string; qty: string }[]>([]);
+
+  const openCreateProduct = () => {
+    setEditingProduct(null);
+    setProductForm(emptyProductForm());
+    setFormError(null);
+    setProductOpen(true);
+  };
+
+  const openEditProduct = (product: ProductItem) => {
+    setEditingProduct(product);
+    setProductForm(formFromProduct(product));
+    setFormError(null);
+    setProductOpen(true);
+  };
 
   const saveProduct = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setFormError(null);
     try {
-      await createProduct({
-        sku,
-        name: productName,
-        category,
-        unitPriceInr: Number(price),
-        unitCostInr: Number(cost)
-      });
+      const warrantyMonths = parseWarrantyMonths(productForm.warrantyMonths);
+      const payload = {
+        sku: productForm.sku.trim(),
+        name: productForm.name.trim(),
+        category: productForm.category,
+        unitPriceInr: Number(productForm.price),
+        unitCostInr: Number(productForm.cost),
+        defaultWarrantyMonths: warrantyMonths,
+        isSerialized: productForm.isSerialized,
+        isActive: productForm.isActive
+      };
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, payload);
+      } else {
+        await createProduct(payload);
+      }
       setProductOpen(false);
-      setSku("");
-      setProductName("");
-      setPrice("");
+      setEditingProduct(null);
+      setProductForm(emptyProductForm());
       await refetch();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Could not save product.");
@@ -58,20 +120,36 @@ export const CatalogPage: React.FC = () => {
     }
   };
 
+  const openCreatePackage = () => {
+    setPackageName("");
+    setSystemKind("on_grid");
+    setCapacityKw("3");
+    setBasePrice("");
+    setPackageLines([]);
+    setFormError(null);
+    setPackageOpen(true);
+  };
+
+  const productName = (productId: string) =>
+    products.find((item) => item.id === productId)?.name ?? productId;
+
   const savePackage = async (event: React.FormEvent) => {
     event.preventDefault();
     setSaving(true);
     setFormError(null);
     try {
+      if (packageLines.length === 0) {
+        throw new Error("Add at least one product to the package.");
+      }
       await createPackage({
-        code,
-        name: packageName,
+        name: packageName.trim(),
         systemKind,
         capacityKw: capacityKw ? Number(capacityKw) : null,
         basePriceInr: Number(basePrice),
-        items: [{ productId: productId || products[0]?.id, qty: Number(qty) }]
+        items: packageLines.map((line) => ({ productId: line.productId, qty: Number(line.qty) }))
       });
       setPackageOpen(false);
+      setPackageLines([]);
       await refetch();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Could not save package.");
@@ -90,10 +168,10 @@ export const CatalogPage: React.FC = () => {
             <Button variant="secondary" size="sm" onClick={() => void refetch()} isLoading={isLoading}>
               Refresh
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => { setFormError(null); setProductOpen(true); }}>
+            <Button variant="secondary" size="sm" onClick={openCreateProduct}>
               New product
             </Button>
-            <Button size="sm" onClick={() => { setFormError(null); setProductId(products[0]?.id ?? ""); setPackageOpen(true); }}>
+            <Button size="sm" onClick={openCreatePackage}>
               New package
             </Button>
           </>
@@ -133,40 +211,165 @@ export const CatalogPage: React.FC = () => {
               { key: "price", header: "Price", align: "right", render: (item) => item.unitPriceInr.toLocaleString("en-IN") },
               { key: "cost", header: "Cost", align: "right", render: (item) => item.unitCostInr.toLocaleString("en-IN") },
               { key: "serial", header: "Serialized", render: (item) => (item.isSerialized ? "Yes" : "No") },
-              { key: "warranty", header: "Warranty (months)", render: (item) => item.defaultWarrantyMonths ?? "—" }
+              { key: "warranty", header: "Warranty (months)", render: (item) => item.defaultWarrantyMonths ?? "—" },
+              {
+                key: "actions",
+                header: "",
+                align: "right",
+                render: (item) => (
+                  <Button variant="outline" size="sm" onClick={() => openEditProduct(item)}>
+                    Edit
+                  </Button>
+                )
+              }
             ]}
           />
         </>
       )}
 
-      <Dialog open={productOpen} title="New product" onClose={() => setProductOpen(false)}>
+      <Dialog
+        open={productOpen}
+        title={editingProduct ? "Edit product" : "New product"}
+        onClose={() => {
+          setProductOpen(false);
+          setEditingProduct(null);
+        }}
+      >
         <form onSubmit={saveProduct} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {formError && <Alert variant="danger" title="Save failed">{formError}</Alert>}
-          <Input label="SKU" required value={sku} onChange={(event) => setSku(event.target.value)} />
-          <Input label="Name" required value={productName} onChange={(event) => setProductName(event.target.value)} />
-          <Select label="Category" value={category} onChange={(event) => setCategory(event.target.value)} options={CATEGORIES.map((value) => ({ value, label: value.replace(/_/g, " ") }))} />
-          <Input label="Unit price (INR)" required type="number" min="0" value={price} onChange={(event) => setPrice(event.target.value)} />
-          <Input label="Unit cost (INR)" type="number" min="0" value={cost} onChange={(event) => setCost(event.target.value)} />
-          <Button type="submit" isLoading={saving}>Save product</Button>
+          <Input
+            label="SKU"
+            required
+            value={productForm.sku}
+            onChange={(event) => setProductForm((prev) => ({ ...prev, sku: event.target.value }))}
+          />
+          <Input
+            label="Name"
+            required
+            value={productForm.name}
+            onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
+          />
+          <Select
+            label="Category"
+            value={productForm.category}
+            onChange={(event) => setProductForm((prev) => ({ ...prev, category: event.target.value }))}
+            options={CATEGORIES.map((value) => ({ value, label: value.replace(/_/g, " ") }))}
+          />
+          <Input
+            label="Unit price (INR)"
+            required
+            type="number"
+            min="0"
+            value={productForm.price}
+            onChange={(event) => setProductForm((prev) => ({ ...prev, price: event.target.value }))}
+          />
+          <Input
+            label="Unit cost (INR)"
+            type="number"
+            min="0"
+            value={productForm.cost}
+            onChange={(event) => setProductForm((prev) => ({ ...prev, cost: event.target.value }))}
+          />
+          <Input
+            label="Warranty (months)"
+            type="number"
+            min="1"
+            step="1"
+            value={productForm.warrantyMonths}
+            helperText="Leave blank for no default warranty. Used when a serial is delivered."
+            onChange={(event) => setProductForm((prev) => ({ ...prev, warrantyMonths: event.target.value }))}
+          />
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "var(--text-base, 15px)" }}>
+            <input
+              type="checkbox"
+              checked={productForm.isSerialized}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, isSerialized: event.target.checked }))}
+            />
+            Serialized (panels, inverters, batteries)
+          </label>
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "var(--text-base, 15px)" }}>
+            <input
+              type="checkbox"
+              checked={productForm.isActive}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, isActive: event.target.checked }))}
+            />
+            Active in catalog
+          </label>
+          <Button type="submit" isLoading={saving}>
+            {editingProduct ? "Save changes" : "Save product"}
+          </Button>
         </form>
       </Dialog>
 
       <Dialog open={packageOpen} title="New package" onClose={() => setPackageOpen(false)}>
         <form onSubmit={savePackage} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {formError && <Alert variant="danger" title="Save failed">{formError}</Alert>}
-          <Input label="Code" required value={code} onChange={(event) => setCode(event.target.value)} />
           <Input label="Name" required value={packageName} onChange={(event) => setPackageName(event.target.value)} />
           <Select label="Kind" value={systemKind} onChange={(event) => setSystemKind(event.target.value)} options={KINDS.map((value) => ({ value, label: value.replace(/_/g, " ") }))} />
-          <Input label="kW" type="number" min="0" step="0.1" value={capacityKw} onChange={(event) => setCapacityKw(event.target.value)} />
+          <Input label="kW" type="number" min="0" step="0.1" value={capacityKw} onChange={(event) => setCapacityKw(event.target.value)} helperText="Code is assigned automatically from kind and kW (e.g. OG-3KW)." />
           <Input label="Base price (INR)" required type="number" min="0" value={basePrice} onChange={(event) => setBasePrice(event.target.value)} />
+          {packageLines.length > 0 && (
+            <Table
+              data={packageLines}
+              keyExtractor={(item) => item.productId}
+              emptyMessage="No products yet."
+              columns={[
+                { key: "product", header: "Product", render: (item) => productName(item.productId) },
+                {
+                  key: "qty",
+                  header: "Qty",
+                  render: (item) => (
+                    <Input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={item.qty}
+                      onChange={(event) =>
+                        setPackageLines((current) =>
+                          current.map((line) =>
+                            line.productId === item.productId ? { ...line, qty: event.target.value } : line
+                          )
+                        )
+                      }
+                    />
+                  )
+                },
+                {
+                  key: "remove",
+                  header: "",
+                  align: "right",
+                  render: (item) => (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setPackageLines((current) => current.filter((line) => line.productId !== item.productId))
+                      }
+                    >
+                      Remove
+                    </Button>
+                  )
+                }
+              ]}
+            />
+          )}
           <Select
-            label="First line product"
-            value={productId}
-            onChange={(event) => setProductId(event.target.value)}
-            options={products.map((item) => ({ value: item.id, label: `${item.sku} · ${item.name}` }))}
+            label="Add product"
+            value=""
+            onChange={(event) => {
+              const productId = event.target.value;
+              if (!productId || packageLines.some((line) => line.productId === productId)) return;
+              setPackageLines((current) => [...current, { productId, qty: "1" }]);
+            }}
+            options={[
+              { value: "", label: "Choose a product" },
+              ...products.map((item) => ({ value: item.id, label: `${item.sku} · ${item.name}` }))
+            ]}
           />
-          <Input label="Qty" type="number" min="0.01" step="0.01" value={qty} onChange={(event) => setQty(event.target.value)} />
-          <Button type="submit" isLoading={saving} disabled={products.length === 0}>Save package</Button>
+          <Button type="submit" isLoading={saving} disabled={products.length === 0 || packageLines.length === 0}>
+            Save package
+          </Button>
         </form>
       </Dialog>
     </div>
