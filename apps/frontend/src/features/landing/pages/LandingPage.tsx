@@ -237,24 +237,13 @@ export const LandingPage: React.FC = () => {
 
       <section id="how-it-works" className="landing-section landing-section--haze">
         <h2>What to expect</h2>
-        <p className="lede">Three steps into the real install pipeline — survey before any price lock.</p>
-        <ol className="landing-steps">
-          <li>
-            <span className="step-label">Step 1</span>
-            <h3>Tell us about the roof</h3>
-            <p>Ownership, type, terrace size, and bill in a short wizard.</p>
-          </li>
-          <li>
-            <span className="step-label">Step 2</span>
-            <h3>We call and visit</h3>
-            <p>Sales follows up, then a technician surveys the site.</p>
-          </li>
-          <li>
-            <span className="step-label">Step 3</span>
-            <h3>Quote after survey</h3>
-            <p>No price lock until the roof is checked.</p>
-          </li>
-        </ol>
+        <p className="lede">
+          From your inquiry to a live rooftop: site survey, a quote you approve, dispatch, then delivery and
+          install — before any price lock.
+        </p>
+        <div className="landing-pipeline">
+          <ProcessPipeline />
+        </div>
         <div className="landing-section-action">
           <Link to="/inquire" className="landing-lamp">
             Start the survey form
