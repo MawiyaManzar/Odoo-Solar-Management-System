@@ -268,11 +268,41 @@ export async function rejectQuote(id: string): Promise<QuoteView> {
   }
   await db.transaction(async (tx) => {
     await tx.update(quotes).set({ status: "rejected", updatedAt: new Date() }).where(eq(quotes.id, id));
+    // Keep the enquiry open so sales can send a corrected quote.
+    // Mark the deal lost only from the enquiry page.
     await tx
-      .update(quotes)
-      .set({ status: "rejected", updatedAt: new Date() })
-      .where(and(eq(quotes.enquiryId, current.enquiryId), inArray(quotes.status, ["draft", "sent"])));
-    await tx.update(enquiries).set({ status: "lost", updatedAt: new Date() }).where(eq(enquiries.id, current.enquiryId));
+      .update(enquiries)
+      .set({ status: "quoted", updatedAt: new Date() })
+      .where(and(eq(enquiries.id, current.enquiryId), ne(enquiries.status, "won")));
   });
   return getQuote(id);
+}
+
+/** Clone a rejected/expired quote into a new draft so sales can correct and resend. */
+export async function reviseQuote(id: string, actor: { id: string; role: string }): Promise<QuoteView> {
+  const current = await getQuote(id);
+  if (current.status !== "rejected" && current.status !== "expired") {
+    throw new ServiceError(400, "Only a rejected or expired quote can be revised.");
+  }
+  if (!current.packageId) {
+    throw new ServiceError(400, "This quote has no package to revise from.");
+  }
+  const enquiry = await getEnquiry(current.enquiryId);
+  if (enquiry.status === "won") {
+    throw new ServiceError(409, "This enquiry already won. Open a new enquiry to quote again.");
+  }
+  if (enquiry.status === "lost") {
+    await db
+      .update(enquiries)
+      .set({ status: "quoted", updatedAt: new Date() })
+      .where(eq(enquiries.id, enquiry.id));
+  }
+  return createQuote(
+    {
+      enquiryId: current.enquiryId,
+      packageId: current.packageId,
+      discountInr: current.discountInr
+    },
+    actor
+  );
 }

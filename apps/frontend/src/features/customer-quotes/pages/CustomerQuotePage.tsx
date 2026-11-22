@@ -80,7 +80,13 @@ export const CustomerQuotePage: React.FC = () => {
     try {
       const response = action === "accept" ? await acceptCustomerQuote(quoteId) : await rejectCustomerQuote(quoteId);
       setQuote(response.data);
-      setInfo(response.message ?? (action === "accept" ? "Quote accepted." : "Quote rejected."));
+      setDevCode(null);
+      setInfo(
+        response.message ??
+          (action === "accept"
+            ? "Quote accepted."
+            : "Quote rejected. Our sales team can send a corrected quotation.")
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update the quote.");
     } finally {
@@ -135,6 +141,11 @@ export const CustomerQuotePage: React.FC = () => {
                 <Button type="button" disabled={busy} onClick={() => void decide("accept")}>Accept</Button>
                 <Button type="button" variant="danger" disabled={busy} onClick={() => void decide("reject")}>Reject</Button>
               </div>
+            )}
+            {quote.status === "rejected" && (
+              <p style={{ margin: 0, color: "var(--text-muted)" }}>
+                If something looks wrong on this quote, reply to sales or wait for a corrected quotation on My Quotes.
+              </p>
             )}
           </>
         )}

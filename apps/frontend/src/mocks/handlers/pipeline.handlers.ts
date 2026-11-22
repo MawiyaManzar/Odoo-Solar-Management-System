@@ -563,8 +563,12 @@ export const pipelineHandlers = [
     if (quote.status !== "sent") return HttpResponse.json({ success: false, message: "This quote is already decided." }, { status: 400 });
     quote.status = "rejected";
     const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
-    if (enquiry) enquiry.status = "lost";
-    return HttpResponse.json({ success: true, data: quote, message: "Quote rejected." });
+    if (enquiry && enquiry.status !== "won") enquiry.status = "quoted";
+    return HttpResponse.json({
+      success: true,
+      data: quote,
+      message: "Quote rejected. Our sales team can send a corrected quotation."
+    });
   }),
 
   http.post("/api/quotes/:id/reject", ({ request, params }) => {
@@ -574,7 +578,67 @@ export const pipelineHandlers = [
     if (!quote) return HttpResponse.json({ success: false, message: "Quote not found." }, { status: 404 });
     quote.status = "rejected";
     const enquiry = enquiries.find((item) => item.id === quote.enquiryId);
-    if (enquiry) enquiry.status = "lost";
-    return HttpResponse.json({ success: true, data: quote, message: "Quote rejected." });
+    if (enquiry && enquiry.status !== "won") enquiry.status = "quoted";
+    return HttpResponse.json({
+      success: true,
+      data: quote,
+      message: "Quote rejected. Create a revised quote to correct it."
+    });
+  }),
+
+  http.post("/api/quotes/:id/revise", ({ request, params }) => {
+    const denied = staffOk(request, ["sales", "admin"]);
+    if (denied) return denied;
+    const current = quotes.find((item) => item.id === params.id);
+    if (!current) return HttpResponse.json({ success: false, message: "Quote not found." }, { status: 404 });
+    if (current.status !== "rejected" && current.status !== "expired") {
+      return HttpResponse.json({ success: false, message: "Only a rejected or expired quote can be revised." }, { status: 400 });
+    }
+    if (!current.packageId) {
+      return HttpResponse.json({ success: false, message: "This quote has no package to revise from." }, { status: 400 });
+    }
+    const enquiry = enquiries.find((item) => item.id === current.enquiryId);
+    if (!enquiry) return HttpResponse.json({ success: false, message: "Enquiry not found." }, { status: 404 });
+    if (enquiry.status === "won") {
+      return HttpResponse.json({ success: false, message: "This enquiry already won. Open a new enquiry to quote again." }, { status: 409 });
+    }
+    const pkg = packageFixture.find((item) => item.id === current.packageId);
+    if (!pkg) return HttpResponse.json({ success: false, message: "Package not found." }, { status: 404 });
+    const id = `quo-${Date.now().toString(36)}`;
+    const lines: QuoteLineItem[] = (pkg.items ?? []).map((item) => {
+      const product = productFixture.find((row) => row.id === item.productId);
+      const unit = product?.unitPriceInr ?? 0;
+      return {
+        id: `ql-${item.id}-${Date.now().toString(36)}`,
+        quoteId: id,
+        productId: item.productId,
+        description: product?.name ?? item.productId,
+        qty: item.qty,
+        unitPriceInr: unit,
+        lineTotalInr: unit * item.qty
+      };
+    });
+    const subtotal = lines.reduce((sum, line) => sum + line.lineTotalInr, 0);
+    const discount = current.discountInr ?? 0;
+    const quote: QuoteItem = {
+      id,
+      enquiryId: enquiry.id,
+      customerId: enquiry.customerId,
+      packageId: pkg.id,
+      status: "draft",
+      subtotalInr: subtotal,
+      discountInr: discount,
+      totalInr: Math.max(0, subtotal - discount),
+      validUntil: null,
+      createdBy: "usr-sales-01",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      customerName: enquiry.customerName,
+      packageCode: pkg.code,
+      lines
+    };
+    quotes.unshift(quote);
+    enquiry.status = "quoted";
+    return HttpResponse.json({ success: true, data: quote, message: "Revised draft quote created." }, { status: 201 });
   })
 ];

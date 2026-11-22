@@ -204,9 +204,10 @@ Creates or updates the customer matched by phone, then inserts an enquiry with `
 | PATCH | `/api/quotes/:id` | sales, admin | draft-only line edits: `{ discountInr?, lines?: [...] }` |
 | POST | `/api/quotes/:id/send` | sales, admin | draft → `sent`. Response adds `customerPath` (`/my/quotes/:id`) |
 | POST | `/api/quotes/:id/accept` | sales, admin | `sent` → `accepted`; **creates** `orders` row (`awaiting_payment`); enquiry → `won` |
-| POST | `/api/quotes/:id/reject` | sales, admin | `draft` or `sent` → `rejected`; enquiry → `lost` |
+| POST | `/api/quotes/:id/reject` | sales, admin | `draft` or `sent` → `rejected`; enquiry stays `quoted` so sales can correct |
+| POST | `/api/quotes/:id/revise` | sales, admin | `rejected` or `expired` → new `draft` from the same package; reopens `lost` enquiry to `quoted` |
 
-**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`). Staff may still Accept or Reject. The customer may also decide after a phone OTP (below).
+**Rule:** reject create if linked survey is not `approved` (unless actor is `admin`). Staff may still Accept or Reject. The customer may also decide after a phone OTP (below). Mark the enquiry `lost` only from the enquiry page when the deal is closed for good.
 
 ---
 
@@ -221,7 +222,7 @@ Homeowners are not staff users. A `customer_accounts` row is created on the firs
 | GET | `/api/customer/quotes` | that customer | List viewable quotes (`sent`, `accepted`, `rejected`, `expired`) |
 | GET | `/api/customer/quotes/:id` | that customer | lines and totals |
 | POST | `/api/customer/quotes/:id/accept` | that customer | `sent` only · same order + `won` effect as staff accept |
-| POST | `/api/customer/quotes/:id/reject` | that customer | `sent` only · enquiry → `lost` |
+| POST | `/api/customer/quotes/:id/reject` | that customer | `sent` only · enquiry stays `quoted` so sales can send a corrected quote |
 | POST | `/api/customer/support/ask` | that customer | `{ question }` → `{ answer, topic }` rule-based from live orders/quotes |
 | GET | `/api/customer/service-tickets` | that customer | Own tickets |
 | POST | `/api/customer/service-tickets` | that customer | `{ serialUnitId, faultCode?, description, billableInr? }` · delivered serials only |

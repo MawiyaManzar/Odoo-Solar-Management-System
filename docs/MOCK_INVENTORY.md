@@ -24,7 +24,7 @@
 | Staff list | `GET /api/staff` | `GET /api/staff` | `REAL API VERIFIED` | Active users, optional `role` |
 | Enquiries | `GET/PATCH /api/enquiries` | same | `REAL API VERIFIED` | Write: sales, admin |
 | Surveys | `GET/POST /api/enquiries/:id/surveys`, `PATCH /api/surveys/:id` | same | `REAL API VERIFIED` | Schedule: sales, technician, admin. Result: technician, admin |
-| Quotes | `GET/POST /api/quotes`, `POST /api/quotes/:id/send|accept|reject` | same | `REAL API VERIFIED` | Write: sales, admin. Accept creates an order (MSW also adds a customer-orders row). Send adds `customerPath` |
+| Quotes | `GET/POST /api/quotes`, `POST /api/quotes/:id/send|accept|reject|revise` | same | `REAL API VERIFIED` | Write: sales, admin. Accept creates an order (MSW also adds a customer-orders row). Send adds `customerPath`. Reject keeps enquiry quoted; revise clones a draft |
 | Customer OTP | `POST /api/customer-auth/otp`, `POST /api/customer-auth/verify` | same | `REAL API VERIFIED` | Dev responses include `devCode` outside production |
 | Customer quote | `GET /api/customer/quotes/:id`, `POST .../accept`, `POST .../reject` | same | `REAL API VERIFIED` | Owner only. A customer token on staff routes returns 403 |
 | Customer sign-in | `POST /api/customer-auth/sign-in/otp`, `POST .../verify` | same | `REAL API VERIFIED` | Unknown phone is told to submit an inquiry |

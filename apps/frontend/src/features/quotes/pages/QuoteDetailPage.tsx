@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../../app/AuthProvider";
 import { Alert } from "../../../components/ui/Alert";
 import { Badge } from "../../../components/ui/Badge";
@@ -7,11 +7,12 @@ import { Button } from "../../../components/ui/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { Table } from "../../../components/ui/Table";
 import { labelStatus, statusVariant } from "../../enquiries/status";
-import { acceptQuote, getQuote, rejectQuote, sendQuote } from "../quotes.api";
+import { acceptQuote, getQuote, rejectQuote, reviseQuote, sendQuote } from "../quotes.api";
 import type { QuoteItem } from "../types";
 
 export const QuoteDetailPage: React.FC = () => {
   const { quoteId = "" } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const canWrite = user?.role === "sales" || user?.role === "admin";
   const [quote, setQuote] = useState<QuoteItem | null>(null);
@@ -100,11 +101,30 @@ export const QuoteDetailPage: React.FC = () => {
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                 <Button type="button" variant="secondary" disabled={quote.status !== "draft" || saving} onClick={() => void run(() => sendQuote(quote.id), "Quote sent.")}>Send</Button>
                 <Button type="button" disabled={quote.status !== "sent" || saving} onClick={() => void run(() => acceptQuote(quote.id), "Quote accepted.")}>Accept</Button>
-                <Button type="button" variant="danger" disabled={(quote.status !== "draft" && quote.status !== "sent") || saving} onClick={() => void run(() => rejectQuote(quote.id), "Quote rejected.")}>Reject</Button>
+                <Button type="button" variant="danger" disabled={(quote.status !== "draft" && quote.status !== "sent") || saving} onClick={() => void run(() => rejectQuote(quote.id), "Quote rejected. Create a revised quote to correct it.")}>Reject</Button>
+                {(quote.status === "rejected" || quote.status === "expired") && (
+                  <Button
+                    type="button"
+                    disabled={saving || !quote.packageId}
+                    onClick={() => {
+                      setSaving(true);
+                      setError(null);
+                      reviseQuote(quote.id)
+                        .then((response) => {
+                          setInfo(response.message ?? "Revised draft quote created.");
+                          navigate(`/app/quotes/${response.data.id}`);
+                        })
+                        .catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not revise quote."))
+                        .finally(() => setSaving(false));
+                    }}
+                  >
+                    Create revised quote
+                  </Button>
+                )}
               </div>
             )}
             <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
-              The customer accepts or rejects on their link after a phone code. Sales can still record the answer here. Accept creates an order awaiting payment.
+              The customer accepts or rejects on their link after a phone code. Sales can still record the answer here. A rejection keeps the enquiry open so you can create a revised quote. Accept creates an order awaiting payment. Mark the enquiry lost only when the deal is closed for good.
             </p>
           </>
         )}

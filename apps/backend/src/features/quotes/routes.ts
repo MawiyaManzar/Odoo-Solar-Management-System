@@ -3,7 +3,7 @@ import { ServiceError } from "../../lib/service-error.js";
 import { parseOrReply } from "../../lib/validate.js";
 import { requireAuth, requireRole } from "../../plugins/auth.js";
 import { idParamSchema, quoteCreateSchema, quoteListQuerySchema, quotePatchSchema } from "./schema.js";
-import { acceptQuote, createQuote, getQuote, listQuotes, rejectQuote, sendQuote, updateQuote } from "./service.js";
+import { acceptQuote, createQuote, getQuote, listQuotes, rejectQuote, reviseQuote, sendQuote, updateQuote } from "./service.js";
 
 function sendKnownError(error: unknown, reply: { status: (code: number) => { send: (body: unknown) => unknown } }): boolean {
   if (error instanceof ServiceError) {
@@ -89,7 +89,19 @@ export async function quoteRoutes(app: FastifyInstance): Promise<void> {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
     try {
-      return { success: true, data: await rejectQuote(params.id), message: "Quote rejected." };
+      return { success: true, data: await rejectQuote(params.id), message: "Quote rejected. Create a revised quote to correct it." };
+    } catch (error) {
+      if (sendKnownError(error, reply)) return;
+      throw error;
+    }
+  });
+
+  app.post("/api/quotes/:id/revise", { preHandler: sales }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    try {
+      const quote = await reviseQuote(params.id, { id: request.user.sub, role: request.user.role ?? "" });
+      return reply.status(201).send({ success: true, data: quote, message: "Revised draft quote created." });
     } catch (error) {
       if (sendKnownError(error, reply)) return;
       throw error;

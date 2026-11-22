@@ -26,3 +26,7 @@ export function acceptQuote(id: string) {
 export function rejectQuote(id: string) {
   return apiClient.post<ApiResponse<QuoteItem>>(`/quotes/${id}/reject`, {});
 }
+
+export function reviseQuote(id: string) {
+  return apiClient.post<ApiResponse<QuoteItem>>(`/quotes/${id}/revise`, {});
+}

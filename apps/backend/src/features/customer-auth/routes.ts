@@ -167,7 +167,11 @@ export async function customerAuthRoutes(app: FastifyInstance): Promise<void> {
     const params = parseOrReply(quoteIdParamSchema, request.params, reply);
     if (!params) return;
     try {
-      return { success: true, data: await customerDecide(params.id, request.user.customerId ?? "", "reject"), message: "Quote rejected." };
+      return {
+        success: true,
+        data: await customerDecide(params.id, request.user.customerId ?? "", "reject"),
+        message: "Quote rejected. Our sales team can send a corrected quotation."
+      };
     } catch (error) {
       if (sendKnownError(error, reply)) return;
       throw error;
