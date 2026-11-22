@@ -122,6 +122,19 @@ VALUES ('enq_01', 'cus_01', 'web_form', 3.0, true, 'new', 'usr_sales1');
 
 ---
 
+### 3b. `inquiry_form_questions` / `inquiry_form_answers` — admin-editable public survey
+
+Approved add-on (not in original 16). Admin defines steps for `/inquire`; contact fields stay fixed in the UI.
+
+| Table | Purpose |
+| --- | --- |
+| `inquiry_form_questions` | `key`, `label`, `field_type` (`single_choice` \| `select` \| `text` \| `number` \| `boolean`), `options_json`, optional `maps_to` enquiry column, `sort_order`, `is_required`, `is_active` |
+| `inquiry_form_answers` | Per enquiry: `question_id` → `answer_value` / `answer_label` |
+
+**App usage:** `GET /api/public/inquiry-form` drives the wizard. `POST /api/public/enquiries` with `answers[]` stores rows and maps known fields (`requestedKw`, `monthlyBillInr`, …) onto `enquiries`.
+
+---
+
 ### 4. `site_surveys` — roof visit before quote
 
 | Column | Type | Notes |

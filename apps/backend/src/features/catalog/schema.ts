@@ -51,6 +51,11 @@ export const packagePatchSchema = z.object({
   items: z.array(packageItemInputSchema).min(1).optional()
 });
 
+export const publicEnquiryAnswerSchema = z.object({
+  questionId: z.string().min(1),
+  value: z.union([z.string(), z.number(), z.boolean()])
+});
+
 export const publicEnquiryBodySchema = z.object({
   name: z.string().trim().min(1),
   phone: z.string().trim().min(8),
@@ -66,7 +71,8 @@ export const publicEnquiryBodySchema = z.object({
   monthlyBillInr: z.number().nonnegative().nullable().optional(),
   roofAreaSqft: z.number().nonnegative().nullable().optional(),
   gridSuitable: z.boolean().nullable().optional(),
-  notes: z.string().trim().optional()
+  notes: z.string().trim().optional(),
+  answers: z.array(publicEnquiryAnswerSchema).optional()
 });
 
 export type ProductInput = z.infer<typeof productBodySchema>;

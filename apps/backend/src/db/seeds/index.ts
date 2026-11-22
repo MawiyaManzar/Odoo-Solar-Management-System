@@ -4,6 +4,7 @@ import { closePool } from "../pool.js";
 import { packageItems, packages, products } from "../schema/catalog.js";
 import { customers } from "../schema/customers.js";
 import { enquiries, siteSurveys } from "../schema/enquiries.js";
+import { inquiryFormQuestions } from "../schema/inquiry-form.js";
 import { installations } from "../schema/installations.js";
 import { dispatches, serialUnits, stockLevels } from "../schema/inventory.js";
 import { orders, payments } from "../schema/orders.js";
@@ -11,6 +12,7 @@ import { warrantyPolicies, warranties } from "../schema/phase2.js";
 import { quoteLines, quotes } from "../schema/quotes.js";
 import { records } from "../schema/records.js";
 import { users } from "../schema/users.js";
+import { inquiryFormSeedQuestions } from "./inquiry-form.seed.js";
 import { DEV_PASSWORD, starterRecordsSeedData, starterUsersSeedData } from "./starter.seed.js";
 import {
   sunpowerCustomer,
@@ -66,6 +68,25 @@ export async function runDatabaseSeed(): Promise<void> {
         updatedAt: new Date(record.updatedAt)
       })
       .onConflictDoNothing({ target: records.id });
+  }
+
+  for (const question of inquiryFormSeedQuestions) {
+    await db
+      .insert(inquiryFormQuestions)
+      .values({
+        id: question.id,
+        key: question.key,
+        label: question.label,
+        helpText: question.helpText,
+        fieldType: question.fieldType,
+        optionsJson: question.optionsJson,
+        mapsTo: question.mapsTo,
+        sortOrder: question.sortOrder,
+        isRequired: question.isRequired,
+        isActive: question.isActive,
+        updatedAt: new Date()
+      })
+      .onConflictDoNothing({ target: inquiryFormQuestions.id });
   }
 
   await db.insert(customers).values(sunpowerCustomer).onConflictDoNothing({ target: customers.id });
@@ -219,6 +240,7 @@ export async function runDatabaseSeed(): Promise<void> {
 
   console.log(`[seed] users ready: ${starterUsersSeedData.length}`);
   console.log(`[seed] records ready: ${starterRecordsSeedData.length}`);
+  console.log(`[seed] inquiry questions ready: ${inquiryFormSeedQuestions.length}`);
   console.log("[seed] demo job: cus-01 / enq-01 / quo-01 / ord-01 (completed)");
   console.log(`[seed] demo password: ${DEV_PASSWORD}`);
 }

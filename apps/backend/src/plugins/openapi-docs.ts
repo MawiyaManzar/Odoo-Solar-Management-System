@@ -17,6 +17,7 @@ const PUBLIC_PATHS = new Set([
   "POST /api/auth/login",
   "GET /api/public/packages",
   "GET /api/public/packages/:id",
+  "GET /api/public/inquiry-form",
   "POST /api/public/enquiries",
   "POST /api/customer-auth/otp",
   "POST /api/customer-auth/verify",

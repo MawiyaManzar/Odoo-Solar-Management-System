@@ -51,6 +51,11 @@ export interface PackageInput {
   items: { productId: string; qty: number }[];
 }
 
+export interface PublicEnquiryAnswer {
+  questionId: string;
+  value: string | number | boolean;
+}
+
 export interface PublicEnquiryInput {
   name: string;
   phone: string;
@@ -66,4 +71,5 @@ export interface PublicEnquiryInput {
   roofAreaSqft?: number | null;
   gridSuitable?: boolean | null;
   notes?: string;
+  answers?: PublicEnquiryAnswer[];
 }

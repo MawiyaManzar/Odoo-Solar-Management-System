@@ -27,7 +27,11 @@ async function runTests() {
   assert(Array.isArray(packageRows) && packageRows.length > 0, "at least one active package", state);
   assert(packageRows.every((row) => row.isActive !== false), "listed packages are active", state);
 
-  console.log("\nUS-3: phased public enquiry stores bill, roof area, and notes");
+  console.log("\nUS-3: phased public enquiry stores bill, roof area, and notes via dynamic answers");
+  const form = await app.inject({ method: "GET", url: "/api/public/inquiry-form" });
+  const questions = form.json().data?.questions ?? [];
+  const byKey = Object.fromEntries(questions.map((q) => [q.key, q]));
+
   const phone = `98${String(Date.now()).slice(-8)}`;
   const created = await app.inject({
     method: "POST",
@@ -40,12 +44,16 @@ async function runTests() {
       pincode: "144001",
       customerType: "residential",
       requestedKw: 3,
-      systemKind: "on_grid",
-      wantsSubsidy: true,
-      monthlyBillInr: 2000,
-      roofAreaSqft: 300,
-      gridSuitable: true,
-      notes: "Roof ownership: Yes\nRoof type: Concrete roof\nTerrace size: 200 – 400 sqft / Medium\nPower cuts: No power cut\nMonthly bill band: ₹1,500 – ₹2,500"
+      answers: [
+        { questionId: byKey.ownership.id, value: "yes" },
+        { questionId: byKey.roof_type.id, value: "concrete" },
+        { questionId: byKey.terrace.id, value: "medium" },
+        { questionId: byKey.power_cuts.id, value: "none" },
+        { questionId: byKey.monthly_bill.id, value: "1500_2500" },
+        { questionId: byKey.requested_kw.id, value: 3 },
+        { questionId: byKey.system_kind.id, value: "on_grid" },
+        { questionId: byKey.wants_subsidy.id, value: true }
+      ]
     }
   });
   const body = created.json();
@@ -54,7 +62,7 @@ async function runTests() {
   assert(body.data?.enquiry?.monthlyBillInr === 2000, "monthly bill stored", state);
   assert(body.data?.enquiry?.roofAreaSqft === 300, "roof area stored", state);
   assert(body.data?.enquiry?.gridSuitable === true, "grid suitable stored", state);
-  assert(String(body.data?.enquiry?.notes ?? "").includes("Roof type: Concrete roof"), "phase notes stored", state);
+  assert(String(body.data?.enquiry?.notes ?? "").includes("Concrete roof"), "phase notes stored", state);
 
   await app.close();
   console.log(`\n${state.passed} passed, ${state.failed} failed`);

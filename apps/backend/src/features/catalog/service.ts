@@ -8,6 +8,7 @@ import { ID_PREFIXES } from "../../contracts/id-prefixes.js";
 import { newId } from "../../lib/ids.js";
 import { ServiceError } from "../../lib/service-error.js";
 import { isUniqueViolation } from "../../lib/validate.js";
+import { insertInquiryAnswers, resolveInquiryAnswers } from "../inquiry-form/service.js";
 import type { PackageInput, PackagePatch, ProductInput, ProductPatch, PublicEnquiryInput } from "./schema.js";
 
 function toProduct(row: typeof products.$inferSelect): ProductResult {
@@ -255,6 +256,12 @@ export async function updatePackage(id: string, input: PackagePatch): Promise<Pa
 
 export async function createPublicEnquiry(input: PublicEnquiryInput): Promise<{ customer: CustomerResult; enquiry: EnquiryResult }> {
   const email = input.email ? input.email : null;
+  const mapped = await resolveInquiryAnswers(input.answers ?? []);
+
+  const noteParts = [...mapped.noteLines];
+  if (input.notes?.trim()) noteParts.push(input.notes.trim());
+  const notes = noteParts.length > 0 ? noteParts.join("\n") : null;
+
   return db.transaction(async (tx) => {
     const [existing] = await tx.select().from(customers).where(eq(customers.phone, input.phone)).limit(1);
     let customerRow = existing;
@@ -295,16 +302,18 @@ export async function createPublicEnquiry(input: PublicEnquiryInput): Promise<{ 
         id: newId(ID_PREFIXES.enquiry),
         customerId: customerRow.id,
         source: "web_form",
-        requestedKw: input.requestedKw,
-        systemKind: input.systemKind ?? null,
-        wantsSubsidy: input.wantsSubsidy ?? false,
-        monthlyBillInr: input.monthlyBillInr ?? null,
-        roofAreaSqft: input.roofAreaSqft ?? null,
-        gridSuitable: input.gridSuitable ?? null,
+        requestedKw: mapped.requestedKw ?? input.requestedKw,
+        systemKind: mapped.systemKind ?? input.systemKind ?? null,
+        wantsSubsidy: mapped.wantsSubsidy ?? input.wantsSubsidy ?? false,
+        monthlyBillInr: mapped.monthlyBillInr ?? input.monthlyBillInr ?? null,
+        roofAreaSqft: mapped.roofAreaSqft ?? input.roofAreaSqft ?? null,
+        gridSuitable: mapped.gridSuitable ?? input.gridSuitable ?? null,
         status: "new",
-        notes: input.notes ?? null
+        notes
       })
       .returning();
+
+    await insertInquiryAnswers(tx, enquiryRow.id, mapped.answerRows);
 
     return { customer: toCustomer(customerRow), enquiry: toEnquiry(enquiryRow) };
   });

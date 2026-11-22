@@ -1,106 +1,45 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert } from "../../../components/ui/Alert";
 import { BrandMark } from "../../../components/ui/BrandMark";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { Select } from "../../../components/ui/Select";
+import { Skeleton } from "../../../components/ui/Skeleton";
 import { submitPublicEnquiry } from "../../catalog/catalog.api";
+import { usePublicInquiryForm } from "../../inquiry-form/hooks/usePublicInquiryForm";
+import type { InquiryQuestionPublic } from "../../inquiry-form/types";
 import { ChoiceGroup } from "../components/ChoiceGroup";
 
-const MIN_REQUESTED_KW = 0.5;
-const MAX_REQUESTED_KW = 999.9;
+const CONTACT_STEP = "__contact__";
+const DEFAULT_REQUESTED_KW = 3;
 
-const STEPS = [
-  "ownership",
-  "roofType",
-  "terrace",
-  "powerCuts",
-  "bill",
-  "systemSize",
-  "contact"
-] as const;
+type AnswerMap = Record<string, string | number | boolean>;
 
-type RoofOwnership = "yes" | "no";
-type RoofType = "concrete" | "metal" | "brick" | "underconstructed";
-type TerraceSize = "small" | "medium" | "big";
-type PowerCuts = "none" | "under_1h" | "under_4h" | "over_4h";
-type BillBand = "under_1500" | "1500_2500" | "2500_4000" | "over_4000";
-
-const TERRACE_SQFT: Record<TerraceSize, number> = {
-  small: 150,
-  medium: 300,
-  big: 500
-};
-
-const BILL_INR: Record<BillBand, number> = {
-  under_1500: 1000,
-  "1500_2500": 2000,
-  "2500_4000": 3200,
-  over_4000: 5000
-};
-
-const OWNERSHIP_LABEL: Record<RoofOwnership, string> = { yes: "Yes", no: "No" };
-const ROOF_TYPE_LABEL: Record<RoofType, string> = {
-  concrete: "Concrete roof",
-  metal: "Metal sheet roof",
-  brick: "Brick roof",
-  underconstructed: "Underconstructed"
-};
-const TERRACE_LABEL: Record<TerraceSize, string> = {
-  small: "< 200 sqft / Small",
-  medium: "200 – 400 sqft / Medium",
-  big: "400 + sqft / Big"
-};
-const POWER_LABEL: Record<PowerCuts, string> = {
-  none: "No power cut",
-  under_1h: "Less than 1 hour",
-  under_4h: "Less than 4 hours",
-  over_4h: "More than 4 hours"
-};
-const BILL_LABEL: Record<BillBand, string> = {
-  under_1500: "Under ₹1,500",
-  "1500_2500": "₹1,500 – ₹2,500",
-  "2500_4000": "₹2,500 – ₹4,000",
-  over_4000: "Over ₹4,000"
-};
-
-function validateRequestedKw(raw: string): string | null {
-  const value = Number(raw);
-  if (!raw.trim() || Number.isNaN(value)) return "Enter a system size in kW.";
-  if (value < MIN_REQUESTED_KW) return `Requested kW must be at least ${MIN_REQUESTED_KW}.`;
-  if (value > MAX_REQUESTED_KW) return `Requested kW must be at most ${MAX_REQUESTED_KW}.`;
-  return null;
+function questionAnswered(question: InquiryQuestionPublic, answers: AnswerMap): boolean {
+  if (!(question.id in answers)) return !question.isRequired;
+  const value = answers[question.id];
+  if (question.fieldType === "boolean") return typeof value === "boolean" || value === "true" || value === "false";
+  if (question.fieldType === "number") {
+    const num = typeof value === "number" ? value : Number(value);
+    return !Number.isNaN(num);
+  }
+  return String(value ?? "").trim().length > 0;
 }
 
-function buildPhaseNotes(input: {
-  ownership: RoofOwnership;
-  roofType: RoofType;
-  terrace: TerraceSize;
-  powerCuts: PowerCuts;
-  bill: BillBand;
-}): string {
-  return [
-    `Roof ownership: ${OWNERSHIP_LABEL[input.ownership]}`,
-    `Roof type: ${ROOF_TYPE_LABEL[input.roofType]}`,
-    `Terrace size: ${TERRACE_LABEL[input.terrace]}`,
-    `Power cuts: ${POWER_LABEL[input.powerCuts]}`,
-    `Monthly bill band: ${BILL_LABEL[input.bill]}`
-  ].join("\n");
+function deriveRequestedKw(questions: InquiryQuestionPublic[], answers: AnswerMap): number {
+  const mapped = questions.find((question) => question.mapsTo === "requestedKw");
+  if (!mapped || !(mapped.id in answers)) return DEFAULT_REQUESTED_KW;
+  const raw = answers[mapped.id];
+  const num = typeof raw === "number" ? raw : Number(raw);
+  return Number.isNaN(num) || num <= 0 ? DEFAULT_REQUESTED_KW : num;
 }
 
 export const InquiryPage: React.FC = () => {
+  const { questions, isLoading, error: formError, refetch } = usePublicInquiryForm();
+  const steps = useMemo(() => [...questions.map((question) => question.id), CONTACT_STEP], [questions]);
   const [stepIndex, setStepIndex] = useState(0);
-  const step = STEPS[stepIndex];
-
-  const [ownership, setOwnership] = useState<RoofOwnership | "">("");
-  const [roofType, setRoofType] = useState<RoofType | "">("");
-  const [terrace, setTerrace] = useState<TerraceSize | "">("");
-  const [powerCuts, setPowerCuts] = useState<PowerCuts | "">("");
-  const [bill, setBill] = useState<BillBand | "">("");
-  const [requestedKw, setRequestedKw] = useState("3");
-  const [systemKind, setSystemKind] = useState("on_grid");
-  const [wantsSubsidy, setWantsSubsidy] = useState(true);
+  const [answers, setAnswers] = useState<AnswerMap>({});
 
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -109,71 +48,64 @@ export const InquiryPage: React.FC = () => {
   const [city, setCity] = useState("Jalandhar");
   const [pincode, setPincode] = useState("");
 
-  const [fieldErrors, setFieldErrors] = useState<{ requestedKw?: string; contact?: string }>({});
+  const [fieldError, setFieldError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const progress = Math.round(((stepIndex + 1) / STEPS.length) * 100);
+  const safeStepIndex = Math.min(stepIndex, Math.max(steps.length - 1, 0));
+  const currentStepId = steps[safeStepIndex] ?? CONTACT_STEP;
+  const currentQuestion = questions.find((question) => question.id === currentStepId) ?? null;
+  const isContact = currentStepId === CONTACT_STEP;
+  const progress = steps.length > 0 ? Math.round(((safeStepIndex + 1) / steps.length) * 100) : 100;
+
+  const contactReady = Boolean(name.trim() && phone.trim().length >= 8 && addressLine.trim() && city.trim());
 
   const canAdvance = (): boolean => {
-    switch (step) {
-      case "ownership":
-        return ownership !== "";
-      case "roofType":
-        return roofType !== "";
-      case "terrace":
-        return terrace !== "";
-      case "powerCuts":
-        return powerCuts !== "";
-      case "bill":
-        return bill !== "";
-      case "systemSize":
-        return validateRequestedKw(requestedKw) === null;
-      case "contact":
-        return Boolean(name.trim() && phone.trim().length >= 8 && addressLine.trim() && city.trim());
-      default:
-        return false;
-    }
+    if (isContact) return contactReady;
+    if (!currentQuestion) return false;
+    return questionAnswered(currentQuestion, answers);
+  };
+
+  const setAnswer = (questionId: string, value: string | number | boolean) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
+    setFieldError(null);
   };
 
   const goNext = () => {
-    if (step === "systemSize") {
-      const kwError = validateRequestedKw(requestedKw);
-      if (kwError) {
-        setFieldErrors({ requestedKw: kwError });
-        return;
-      }
-      setFieldErrors({});
+    if (!canAdvance()) {
+      setFieldError(currentQuestion?.isRequired ? "Please answer this question." : null);
+      return;
     }
-    if (!canAdvance()) return;
-    setStepIndex((index) => Math.min(index + 1, STEPS.length - 1));
+    setStepIndex((index) => Math.min(index + 1, steps.length - 1));
   };
 
   const goBack = () => {
     setError(null);
+    setFieldError(null);
     setStepIndex((index) => Math.max(index - 1, 0));
   };
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (step !== "contact") {
+    if (!isContact) {
       goNext();
       return;
     }
-    if (!canAdvance() || !ownership || !roofType || !terrace || !powerCuts || !bill) {
-      setFieldErrors({ contact: "Fill name, phone, address, and city." });
-      return;
-    }
-    const kwError = validateRequestedKw(requestedKw);
-    if (kwError) {
-      setFieldErrors({ requestedKw: kwError });
-      setStepIndex(STEPS.indexOf("systemSize"));
+    if (!contactReady) {
+      setFieldError("Fill name, phone, address, and city.");
       return;
     }
 
-    setFieldErrors({});
-    setIsLoading(true);
+    const payloadAnswers = questions
+      .filter((question) => question.id in answers)
+      .map((question) => ({
+        questionId: question.id,
+        value: answers[question.id]
+      }));
+
+    setFieldError(null);
+    setIsSubmitting(true);
     setError(null);
     try {
       const response = await submitPublicEnquiry({
@@ -184,20 +116,79 @@ export const InquiryPage: React.FC = () => {
         city: city.trim(),
         pincode: pincode.trim() || undefined,
         customerType: "residential",
-        requestedKw: Number(requestedKw),
-        systemKind,
-        wantsSubsidy,
-        monthlyBillInr: BILL_INR[bill],
-        roofAreaSqft: TERRACE_SQFT[terrace],
-        gridSuitable: ownership === "yes",
-        notes: buildPhaseNotes({ ownership, roofType, terrace, powerCuts, bill })
+        requestedKw: deriveRequestedKw(questions, answers),
+        answers: payloadAnswers
       });
       setDoneId(response.data.enquiry.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send the inquiry.");
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
+  };
+
+  const renderQuestion = (question: InquiryQuestionPublic) => {
+    const value = answers[question.id];
+    if (question.fieldType === "single_choice") {
+      return (
+        <ChoiceGroup
+          label={question.label}
+          value={typeof value === "string" ? value : ""}
+          onChange={(next) => setAnswer(question.id, next)}
+          columns={question.options && question.options.length > 3 ? 1 : 2}
+          options={(question.options ?? []).map((opt) => ({ value: opt.value, label: opt.label }))}
+        />
+      );
+    }
+    if (question.fieldType === "select") {
+      return (
+        <Select
+          label={question.label}
+          value={typeof value === "string" ? value : ""}
+          helperText={question.helpText ?? undefined}
+          onChange={(event) => setAnswer(question.id, event.target.value)}
+          options={[
+            { value: "", label: "Select…" },
+            ...(question.options ?? []).map((opt) => ({ value: opt.value, label: opt.label }))
+          ]}
+        />
+      );
+    }
+    if (question.fieldType === "number") {
+      return (
+        <Input
+          label={question.label}
+          required={question.isRequired}
+          type="number"
+          step="0.1"
+          value={value === undefined ? "" : String(value)}
+          helperText={question.helpText ?? undefined}
+          onChange={(event) => setAnswer(question.id, event.target.value)}
+        />
+      );
+    }
+    if (question.fieldType === "boolean") {
+      const checked = value === true || value === "true";
+      return (
+        <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "var(--text-base, 15px)" }}>
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={(event) => setAnswer(question.id, event.target.checked)}
+          />
+          {question.label}
+        </label>
+      );
+    }
+    return (
+      <Input
+        label={question.label}
+        required={question.isRequired}
+        value={typeof value === "string" ? value : ""}
+        helperText={question.helpText ?? undefined}
+        onChange={(event) => setAnswer(question.id, event.target.value)}
+      />
+    );
   };
 
   return (
@@ -231,10 +222,31 @@ export const InquiryPage: React.FC = () => {
           Free rooftop solar survey
         </h1>
         <p style={{ margin: "0 0 16px", color: "var(--text-muted)", fontSize: "var(--text-sm, 13px)" }}>
-          Step {stepIndex + 1} of {STEPS.length}. Answer a few roof questions, then leave your contact details.
+          {isLoading
+            ? "Loading survey questions…"
+            : `Step ${safeStepIndex + 1} of ${Math.max(steps.length, 1)}. Answer a few roof questions, then leave your contact details.`}
         </p>
 
-        {!doneId && (
+        {isLoading && (
+          <div data-testid="inquiry-form-public-skeleton" style={{ display: "grid", gap: "12px" }}>
+            <style>{`@keyframes skeleton-pulse { 0%, 100% { opacity: 0.45 } 50% { opacity: 0.9 } }`}</style>
+            <Skeleton height={6} />
+            <Skeleton height={28} width="70%" />
+            <Skeleton height={48} />
+            <Skeleton height={48} />
+          </div>
+        )}
+
+        {formError && (
+          <Alert variant="danger" title="Could not load survey">
+            {formError.message}{" "}
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </Alert>
+        )}
+
+        {!isLoading && !formError && !doneId && (
           <div
             aria-hidden="true"
             style={{
@@ -271,118 +283,16 @@ export const InquiryPage: React.FC = () => {
           </div>
         )}
 
-        {!doneId && (
+        {!isLoading && !formError && !doneId && (
           <form onSubmit={onSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {step === "ownership" && (
-              <ChoiceGroup
-                label="Do you own the roof?"
-                value={ownership}
-                onChange={setOwnership}
-                options={[
-                  { value: "yes", label: "Yes" },
-                  { value: "no", label: "No" }
-                ]}
-              />
-            )}
+            {currentQuestion && renderQuestion(currentQuestion)}
 
-            {step === "roofType" && (
-              <ChoiceGroup
-                label="What type of roof do you have?"
-                value={roofType}
-                onChange={setRoofType}
-                options={[
-                  { value: "concrete", label: "Concrete roof" },
-                  { value: "metal", label: "Metal sheet roof" },
-                  { value: "brick", label: "Brick roof" },
-                  { value: "underconstructed", label: "Underconstructed" }
-                ]}
-              />
-            )}
-
-            {step === "terrace" && (
-              <ChoiceGroup
-                label="Terrace size"
-                value={terrace}
-                onChange={setTerrace}
-                columns={1}
-                options={[
-                  { value: "small", label: "< 200 sqft / Small" },
-                  { value: "medium", label: "200 – 400 sqft / Medium" },
-                  { value: "big", label: "400 + sqft / Big" }
-                ]}
-              />
-            )}
-
-            {step === "powerCuts" && (
-              <ChoiceGroup
-                label="How often do you face power cuts?"
-                value={powerCuts}
-                onChange={setPowerCuts}
-                options={[
-                  { value: "none", label: "No power cut" },
-                  { value: "under_1h", label: "Less than 1 hour" },
-                  { value: "under_4h", label: "Less than 4 hours" },
-                  { value: "over_4h", label: "More than 4 hours" }
-                ]}
-              />
-            )}
-
-            {step === "bill" && (
-              <ChoiceGroup
-                label="Monthly electricity bill"
-                value={bill}
-                onChange={setBill}
-                options={[
-                  { value: "under_1500", label: "Under ₹1,500" },
-                  { value: "1500_2500", label: "₹1,500 – ₹2,500" },
-                  { value: "2500_4000", label: "₹2,500 – ₹4,000" },
-                  { value: "over_4000", label: "Over ₹4,000" }
-                ]}
-              />
-            )}
-
-            {step === "systemSize" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <h2 style={{ margin: 0, fontSize: "var(--text-lg, 18px)" }}>System size</h2>
-                <Input
-                  label="Requested kW"
-                  required
-                  type="number"
-                  min={MIN_REQUESTED_KW}
-                  max={MAX_REQUESTED_KW}
-                  step="0.1"
-                  value={requestedKw}
-                  error={fieldErrors.requestedKw}
-                  helperText={`Between ${MIN_REQUESTED_KW} and ${MAX_REQUESTED_KW} kW`}
-                  onChange={(event) => {
-                    setRequestedKw(event.target.value);
-                    if (fieldErrors.requestedKw) {
-                      setFieldErrors((prev) => ({ ...prev, requestedKw: undefined }));
-                    }
-                  }}
-                />
-                <Select
-                  label="System"
-                  value={systemKind}
-                  onChange={(event) => setSystemKind(event.target.value)}
-                  options={[
-                    { value: "on_grid", label: "On-grid" },
-                    { value: "off_grid", label: "Off-grid" }
-                  ]}
-                />
-                <label style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "var(--text-base, 15px)" }}>
-                  <input type="checkbox" checked={wantsSubsidy} onChange={(event) => setWantsSubsidy(event.target.checked)} />
-                  Interested in government subsidy
-                </label>
-              </div>
-            )}
-
-            {step === "contact" && (
+            {isContact && (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <h2 style={{ margin: 0, fontSize: "var(--text-lg, 18px)" }}>How can we reach you?</h2>
-                {fieldErrors.contact && (
+                {fieldError && (
                   <Alert variant="danger" title="Missing details">
-                    {fieldErrors.contact}
+                    {fieldError}
                   </Alert>
                 )}
                 <Input label="Full name" required value={name} onChange={(event) => setName(event.target.value)} />
@@ -399,12 +309,18 @@ export const InquiryPage: React.FC = () => {
               </div>
             )}
 
+            {!isContact && fieldError && (
+              <Alert variant="danger" title="Answer needed">
+                {fieldError}
+              </Alert>
+            )}
+
             <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "8px" }}>
-              <Button type="button" variant="outline" onClick={goBack} disabled={stepIndex === 0 || isLoading}>
+              <Button type="button" variant="outline" onClick={goBack} disabled={safeStepIndex === 0 || isSubmitting}>
                 Back
               </Button>
-              {step === "contact" ? (
-                <Button type="submit" isLoading={isLoading} disabled={!canAdvance()}>
+              {isContact ? (
+                <Button type="submit" isLoading={isSubmitting} disabled={!canAdvance()}>
                   Submit inquiry
                 </Button>
               ) : (

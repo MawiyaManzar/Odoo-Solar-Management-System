@@ -19,7 +19,9 @@
 | Record update | `PATCH /api/records/:id` | `PATCH /api/records/:id` | `REAL API VERIFIED` | `admin` and `manager` only |
 | Public packages | `GET /api/public/packages` | `GET /api/public/packages` | `REAL API VERIFIED` | Active packages for the landing page |
 | Public package | `GET /api/public/packages/:id` | `GET /api/public/packages/:id` | `REAL API IMPLEMENTED` | 404 when inactive |
-| Public enquiry | `POST /api/public/enquiries` | `POST /api/public/enquiries` | `REAL API VERIFIED` | Upserts customer by phone, `source: web_form`. Optional `monthlyBillInr`, `roofAreaSqft`, `gridSuitable`; phase answers also in `notes` |
+| Public enquiry | `POST /api/public/enquiries` | `POST /api/public/enquiries` | `REAL API VERIFIED` | Upserts customer by phone, `source: web_form`. Optional `answers[]` stored in `inquiry_form_answers` and mapped to columns/notes |
+| Public inquiry form | — | `GET /api/public/inquiry-form` | `REAL API VERIFIED` | Active questions for `/inquire`; no MSW handler (own feature) |
+| Admin inquiry questions | — | `GET/POST/PATCH/DELETE /api/admin/inquiry-questions` | `REAL API VERIFIED` | Admin-only form builder; no MSW handler (own feature) |
 | Products | `GET/POST /api/products`, `PATCH /api/products/:id` | same | `REAL API IMPLEMENTED` | Write: admin |
 | Packages | `GET/POST /api/packages`, `GET/PATCH /api/packages/:id` | same | `REAL API VERIFIED` | Public list read during the quote smoke; write is admin |
 | Staff list | `GET /api/staff` | `GET /api/staff` | `REAL API VERIFIED` | Active users, optional `role` |

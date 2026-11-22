@@ -64,7 +64,10 @@ Full request/response detail: [API.md](API.md).
 | GET | `/api/auth/me` | any auth | auth |
 | GET | `/api/public/packages` | public | catalog |
 | GET | `/api/public/packages/:id` | public | catalog |
+| GET | `/api/public/inquiry-form` | public | inquiry-form |
 | POST | `/api/public/enquiries` | public | catalog |
+| GET/POST | `/api/admin/inquiry-questions` | admin | inquiry-form |
+| PATCH/DELETE | `/api/admin/inquiry-questions/:id` | admin | inquiry-form |
 | GET | `/api/staff` | any auth | enquiries |
 | GET/POST | `/api/customers` | read: any · write: sales, admin | enquiries |
 | GET/PATCH | `/api/customers/:id` | read: any · write: sales, admin | enquiries |

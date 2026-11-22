@@ -88,7 +88,12 @@ Active packages only. Inactive packages return 404 on the public detail route.
 | :--- | :--- | :--- | :--- |
 | GET | `/api/public/packages` | public | Active packages. Same `PackageResult` shape, items omitted |
 | GET | `/api/public/packages/:id` | public | Active package including `items` |
-| POST | `/api/public/enquiries` | public | `{ name, phone, email?, addressLine, city, pincode?, customerType?, requestedKw, systemKind?, wantsSubsidy?, monthlyBillInr?, roofAreaSqft?, gridSuitable?, notes? }` |
+| GET | `/api/public/inquiry-form` | public | Active survey questions for `/inquire` |
+| POST | `/api/public/enquiries` | public | `{ name, phone, email?, addressLine, city, pincode?, customerType?, requestedKw, systemKind?, wantsSubsidy?, monthlyBillInr?, roofAreaSqft?, gridSuitable?, notes?, answers?: { questionId, value }[] }` |
+| GET | `/api/admin/inquiry-questions` | admin | All survey questions including inactive |
+| POST | `/api/admin/inquiry-questions` | admin | Create question |
+| PATCH | `/api/admin/inquiry-questions/:id` | admin | Update question |
+| DELETE | `/api/admin/inquiry-questions/:id` | admin | Soft-delete if answers exist, else hard-delete |
 
 Creates or updates the customer matched by phone, then inserts an enquiry with `source: web_form` and `status: new`. Response: `{ customer: CustomerResult, enquiry: EnquiryResult }`.
 

@@ -5,6 +5,7 @@ import { catalogRoutes } from "./features/catalog/routes.js";
 import { customerAuthRoutes } from "./features/customer-auth/routes.js";
 import { enquiryRoutes } from "./features/enquiries/routes.js";
 import { healthRoutes } from "./features/health/routes.js";
+import { inquiryFormRoutes } from "./features/inquiry-form/routes.js";
 import { inventoryRoutes } from "./features/inventory/routes.js";
 import { ordersRoutes } from "./features/orders/routes.js";
 import { quoteRoutes } from "./features/quotes/routes.js";
@@ -31,6 +32,7 @@ export async function buildApp(options?: { logger?: boolean }): Promise<FastifyI
   await app.register(catalogRoutes);
   await app.register(customerAuthRoutes);
   await app.register(enquiryRoutes);
+  await app.register(inquiryFormRoutes);
   await app.register(quoteRoutes);
   await app.register(ordersRoutes);
   await app.register(inventoryRoutes);

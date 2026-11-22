@@ -5,6 +5,8 @@ export const ID_PREFIXES = {
   customerAccount: "cac-",
   customerOtp: "otp-",
   enquiry: "enq-",
+  inquiryQuestion: "ifq-",
+  inquiryAnswer: "ifa-",
   siteSurvey: "sur-",
   product: "prd-",
   package: "pkg-",

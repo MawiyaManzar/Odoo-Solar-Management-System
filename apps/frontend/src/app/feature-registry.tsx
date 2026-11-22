@@ -10,6 +10,7 @@ import { EnquiriesPage } from "../features/enquiries/pages/EnquiriesPage";
 import { EnquiryDetailPage } from "../features/enquiries/pages/EnquiryDetailPage";
 import { QuoteDetailPage } from "../features/quotes/pages/QuoteDetailPage";
 import { QuotesPage } from "../features/quotes/pages/QuotesPage";
+import { InquiryFormAdminPage } from "../features/inquiry-form/pages/InquiryFormAdminPage";
 import { RecordsPage } from "../features/records/pages/RecordsPage";
 import { ReportsPage } from "../features/reports/pages/ReportsPage";
 
@@ -69,6 +70,13 @@ export const featureRoutes: FeatureRoute[] = [
     label: "Catalog",
     roles: ["admin"],
     page: CatalogPage
+  },
+  {
+    id: "inquiry-form",
+    path: "inquiry-form",
+    label: "Inquiry form",
+    roles: ["admin"],
+    page: InquiryFormAdminPage
   },
   {
     id: "catalog-detail",

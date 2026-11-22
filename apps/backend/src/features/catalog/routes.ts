@@ -50,8 +50,13 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
   app.post("/api/public/enquiries", async (request, reply) => {
     const body = parseOrReply(publicEnquiryBodySchema, request.body, reply);
     if (!body) return;
-    const created = await createPublicEnquiry(body);
-    return reply.status(201).send({ success: true, data: created, message: "Enquiry received." });
+    try {
+      const created = await createPublicEnquiry(body);
+      return reply.status(201).send({ success: true, data: created, message: "Enquiry received." });
+    } catch (error) {
+      if (sendKnownError(error, reply)) return;
+      throw error;
+    }
   });
 
   app.get("/api/products", { preHandler: requireAuth }, async (request, reply) => {
